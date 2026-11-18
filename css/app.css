@@ -99,7 +99,11 @@ fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
 .lib-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; display: grid; gap: 8px; align-content: start; }
 .lib-card h3 { font-size: 15.5px; line-height: 1.35; }
 .lib-card .meta { font-size: 13px; color: var(--muted); }
-.lib-card .langs { display: grid; gap: 8px; }
+.lib-card .langs { display: grid; gap: 8px; margin-top: 8px; }
+.lib-open { display: flex; flex-wrap: wrap; gap: 8px; align-items: end; }
+.lib-open .field { flex: 1 1 200px; }
+.lib-pick { width: 100%; }
+.lib-details summary { cursor: pointer; color: var(--muted); font-size: 13.5px; }
 .lib-lang { border-top: 1px solid var(--line); padding-top: 8px; display: grid; gap: 6px; }
 .lib-lang .top { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; flex-wrap: wrap; }
 .pill { font-size: 12px; border-radius: 99px; padding: 1px 8px; background: var(--surface-2); color: var(--muted); }

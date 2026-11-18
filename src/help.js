@@ -78,7 +78,8 @@ export const TOPICS = [
   { id: "library", title: "Library and credits", html: `
 <p>The Library keeps every paper you have translated, per language: the source, the translation, the glossary, the verification report and each compiled level.</p>
 <ul>
-<li><b>Open</b> reads it again for free.</li>
+<li><b>Read in</b>: pick a language from the menu on a paper's card to open it in that language, free. <b>Open in …</b> opens it in your own language.</li>
+<li><b>Translation details</b> shows each language's status, models and token use, with Resume and Delete.</li>
 <li>Uploading the same .zip again is recognised, so you are not charged twice.</li>
 <li>Token use per translation is shown so you can see what each paper cost.</li>
 <li><b>Export</b> saves everything to one .zip (a backup, or to move to another browser). <b>Import</b> merges such a file back.</li>

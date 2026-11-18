@@ -231,8 +231,21 @@ async function renderLibrary() {
   $("welcome").hidden = papers.some(p => !p.sample);
   $("sampleRestore").hidden = papers.some(p => p.sample);
   for (const { paper, trs: ts } of rows) {
+    ts.sort((a, b) => (LANGS[a.lang]?.name || a.lang).localeCompare(LANGS[b.lang]?.name || b.lang));
+    // Picking a language opens the paper in that language (or resumes an unfinished translation).
+    const pick = h("select", { class: "lib-pick", "aria-label": `Read "${paper.title}" in`,
+      onchange: e => {
+        const t = ts.find(x => x.lang === e.target.value);
+        e.target.value = "";
+        if (!t) return;
+        logEvent("library-open", { lang: t.lang }, { paper: paper.id.slice(0, 10), lang: t.lang });
+        if (t.status === "complete") openReader(paper.id, t.lang); else loadPaperIntoNew(paper, t.lang);
+      } },
+      h("option", { value: "" }, ts.length ? `Choose a language (${ts.length})…` : "No translations yet"),
+      ...ts.map(t => h("option", { value: t.lang }, langLabel(t.lang) + (t.status === "complete" ? "" : " (unfinished: resume)"))));
+    const mine = ts.find(t => t.lang === profile().lang && t.status === "complete");
     const langs = h("div", { class: "langs" });
-    for (const t of ts.sort((a, b) => a.lang.localeCompare(b.lang))) {
+    for (const t of ts) {
       const nRenders = renderKeys.filter(k => k.startsWith(`${t.id}|`)).length;
       const r = t.report;
       const pill = t.status === "complete" ? (r && (r.flagged || r.fallback) ? h("span", { class: "pill warn" }, `${r.flagged + r.fallback} to review`) : h("span", { class: "pill ok" }, "verified"))
@@ -249,7 +262,10 @@ async function renderLibrary() {
     list.append(h("article", { class: "lib-card" },
       h("h3", {}, paper.title, paper.sample ? h("span", { class: "pill ok", style: "margin-left:8px;vertical-align:2px" }, "sample") : null),
       h("span", { class: "meta" }, `${paper.doc.stats.sentences} sentences · ${paper.doc.stats.words} words · added ${new Date(paper.createdAt).toLocaleDateString()}`),
-      langs,
+      h("div", { class: "lib-open" },
+        h("label", { class: "field" }, h("span", { class: "label" }, "Read in"), pick),
+        mine ? h("button", { class: "btn small primary", onclick: () => openReader(paper.id, mine.lang) }, `Open in ${LANGS[mine.lang].name}`) : null),
+      ts.length ? h("details", { class: "lib-details" }, h("summary", {}, `Translation details (${ts.length})`), langs) : null,
       h("div", { class: "row" },
         h("button", { class: "btn small", onclick: () => loadPaperIntoNew(paper) }, "Translate into another language"),
         h("button", { class: "btn small danger", onclick: async () => { if (confirm(`Delete "${paper.title}" and all its translations?`)) { await deletePaper(paper.id); if (rd.paperId === paper.id) clearReader(); renderLibrary(); } } }, "Delete paper"))));

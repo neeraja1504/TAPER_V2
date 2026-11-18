@@ -105,7 +105,8 @@ If you upload a paper that is already in your library, TAPER says so and opens i
 
 Every paper and language you have translated, with its status, models, tokens used and compiled levels.
 
-- **Open** reads it again for free.
+- **Read in**: choose a language from the menu on a paper's card and it opens in that language, free. **Open in …** opens it in your own language. An unfinished translation in the menu opens the Translate page to resume it.
+- **Translation details** lists each language's status, models, tokens used and compiled levels, with **Resume** and **Delete**.
 - **Translate into another language** reuses the paper.
 - **Export library** saves everything (sources, translations, original PDFs, quizzes) to one .zip. Use it as a backup or to move to another browser. **Import library** merges such a file back.
 
