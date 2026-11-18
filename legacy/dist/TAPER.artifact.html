@@ -1,12 +1,7 @@
-<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
 <title>TAPER Reader</title>
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&family=Literata:opsz,wght@7..72,400;7..72,600&family=Noto+Sans+Devanagari:wght@400;600&family=Noto+Sans+SC:wght@400;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&family=Literata:opsz,wght@7..72,400;7..72,600&family=Noto+Sans+Devanagari:wght@400;600&family=Noto+Sans+KR:wght@400;600&family=Noto+Sans+SC:wght@400;600&display=swap">
 <style>
 /* Layout: a reading desk. Controls on top, the two language panels side by side, the study check-in underneath. */
 :root {
@@ -26,8 +21,9 @@
   --warn: #a33a2b;
   --focus: #3b6fd8;
   --font-ui: "IBM Plex Sans", "Noto Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-read: "Literata", "Noto Serif", Georgia, "Noto Sans SC", "Noto Sans Devanagari", serif;
+  --font-read: "Literata", "Noto Serif", Georgia, "Noto Sans SC", "Noto Sans KR", "Noto Sans Devanagari", serif;
   --font-cjk: "Noto Sans SC", "Microsoft YaHei", "PingFang SC", sans-serif;
+  --font-kr: "Noto Sans KR", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
   --font-deva: "Noto Sans Devanagari", "Nirmala UI", "Mangal", sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
   --radius: 10px;
@@ -108,6 +104,7 @@ details.custom .row { margin-top: 10px; }
 .panel h2 { font-family: var(--font-read); font-weight: 600; font-size: 19px; margin-bottom: 8px; }
 .text { font-family: var(--font-read); font-size: 18.5px; line-height: 1.85; max-width: 68ch; overflow-wrap: anywhere; }
 .text:lang(zh) { font-family: var(--font-cjk); font-size: 18px; }
+.text:lang(ko) { font-family: var(--font-kr); font-size: 18px; word-break: keep-all; }
 .text:lang(hi) { font-family: var(--font-deva); }
 .sent { border-radius: 4px; transition: background-color .12s; padding: 1px 0; }
 .sent.as-en { color: var(--english); }
@@ -172,8 +169,6 @@ td.detail { white-space: normal; min-width: 260px; font-family: var(--font-mono)
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
 
-</head>
-<body>
 <div class="wrap">
   <header class="top">
     <div class="brand">
@@ -360,53 +355,59 @@ const LANGS = {
   vi: { name: "Vietnamese", self: "Tiếng Việt", tag: "vi" },
   es: { name: "Spanish", self: "Español", tag: "es" },
   zh: { name: "Chinese (Simplified)", self: "中文", tag: "zh" },
-  hi: { name: "Hindi", self: "हिन्दी", tag: "hi" }
+  hi: { name: "Hindi", self: "हिन्दी", tag: "hi" },
+  ko: { name: "Korean", self: "한국어", tag: "ko" }
 };
 
 const PASSAGES = [
   {
     id: "ml-training",
-    title: { en: "Training a transformer model", vi: "Huấn luyện mô hình transformer", es: "Entrenamiento de un modelo transformer", zh: "训练 transformer 模型", hi: "ट्रांसफ़ॉर्मर मॉडल का प्रशिक्षण" },
+    title: { en: "Training a transformer model", vi: "Huấn luyện mô hình transformer", es: "Entrenamiento de un modelo transformer", zh: "训练 transformer 模型", hi: "ट्रांसफ़ॉर्मर मॉडल का प्रशिक्षण", ko: "트랜스포머 모델 학습" },
     sentences: [
       { en: "We train a [[transformer]] model with [[self-attention]] on a large [[dataset]].",
         tr: { vi: "Chúng tôi huấn luyện một mô hình [[transformer]] với [[self-attention]] trên một [[dataset]] lớn.",
               es: "Entrenamos un modelo [[transformer]] con [[self-attention]] sobre un [[dataset]] grande.",
               zh: "我们在一个大型[[dataset]]上训练一个带有[[self-attention]]的[[transformer]]模型。",
-              hi: "हम एक बड़े [[dataset]] पर [[self-attention]] के साथ एक [[transformer]] मॉडल को प्रशिक्षित करते हैं।" } },
+              hi: "हम एक बड़े [[dataset]] पर [[self-attention]] के साथ एक [[transformer]] मॉडल को प्रशिक्षित करते हैं।",
+              ko: "우리는 대규모 [[dataset]]에서 [[self-attention]]을 사용하는 [[transformer]] 모델을 학습합니다." } },
       { en: "The [[gradient descent]] optimizer minimizes the [[loss function]], and we tune the [[learning rate]] to avoid [[overfitting]].",
         tr: { vi: "Bộ tối ưu [[gradient descent]] giảm thiểu [[loss function]], và chúng tôi điều chỉnh [[learning rate]] để tránh [[overfitting]].",
               es: "El optimizador de [[gradient descent]] minimiza la [[loss function]], y ajustamos la [[learning rate]] para evitar el [[overfitting]].",
               zh: "[[gradient descent]]优化器最小化[[loss function]]，我们调整[[learning rate]]以避免[[overfitting]]。",
-              hi: "[[gradient descent]] ऑप्टिमाइज़र [[loss function]] को न्यूनतम करता है, और हम [[overfitting]] से बचने के लिए [[learning rate]] को समायोजित करते हैं।" } },
+              hi: "[[gradient descent]] ऑप्टिमाइज़र [[loss function]] को न्यूनतम करता है, और हम [[overfitting]] से बचने के लिए [[learning rate]] को समायोजित करते हैं।",
+              ko: "[[gradient descent]] 옵티마이저는 [[loss function]]의 값을 최소화하며, [[overfitting]]을 피하기 위해 [[learning rate]] 값을 조정합니다." } },
       { en: "We evaluate the model with [[cross-validation]].",
         tr: { vi: "Chúng tôi đánh giá mô hình bằng [[cross-validation]].",
               es: "Evaluamos el modelo con [[cross-validation]].",
               zh: "我们用[[cross-validation]]评估模型。",
-              hi: "हम [[cross-validation]] के साथ मॉडल का मूल्यांकन करते हैं।" } },
+              hi: "हम [[cross-validation]] के साथ मॉडल का मूल्यांकन करते हैं।",
+              ko: "우리는 [[cross-validation]]으로 모델을 평가합니다." } },
       { en: "Each training [[batch]] contains 256 examples, and the model sees the full [[dataset]] once per [[epoch]].",
         tr: { vi: "Mỗi [[batch]] huấn luyện chứa 256 mẫu, và mô hình đi qua toàn bộ [[dataset]] một lần trong mỗi [[epoch]].",
               es: "Cada [[batch]] de entrenamiento contiene 256 ejemplos, y el modelo recorre el [[dataset]] completo una vez por [[epoch]].",
               zh: "每个训练[[batch]]包含256个样本，模型在每个[[epoch]]中完整遍历一次[[dataset]]。",
-              hi: "प्रत्येक प्रशिक्षण [[batch]] में 256 उदाहरण होते हैं, और मॉडल हर [[epoch]] में पूरे [[dataset]] को एक बार देखता है।" } },
+              hi: "प्रत्येक प्रशिक्षण [[batch]] में 256 उदाहरण होते हैं, और मॉडल हर [[epoch]] में पूरे [[dataset]] को एक बार देखता है।",
+              ko: "각 학습 [[batch]]에는 256개의 예제가 있으며, 모델은 [[epoch]]마다 전체 [[dataset]]을 한 번씩 학습합니다." } },
       { en: "When the validation loss stops improving, we apply [[early stopping]] and keep the best [[checkpoint]].",
         tr: { vi: "Khi sai số trên tập kiểm định không còn giảm, chúng tôi áp dụng [[early stopping]] và giữ lại [[checkpoint]] tốt nhất.",
               es: "Cuando la pérdida de validación deja de mejorar, aplicamos [[early stopping]] y conservamos el mejor [[checkpoint]].",
               zh: "当验证损失不再下降时，我们采用[[early stopping]]并保留最佳的[[checkpoint]]。",
-              hi: "जब वैलिडेशन लॉस में सुधार रुक जाता है, तो हम [[early stopping]] लागू करते हैं और सबसे अच्छा [[checkpoint]] रखते हैं।" } }
+              hi: "जब वैलिडेशन लॉस में सुधार रुक जाता है, तो हम [[early stopping]] लागू करते हैं और सबसे अच्छा [[checkpoint]] रखते हैं।",
+              ko: "검증 손실이 더 이상 개선되지 않으면 [[early stopping]] 기법을 적용하고 가장 좋은 [[checkpoint]]를 보관합니다." } }
     ],
     terms: {
-      "transformer":      { vi: "bộ biến đổi", es: "transformador", zh: "变换器", hi: "ट्रांसफ़ॉर्मर" },
-      "self-attention":   { vi: "tự chú ý", es: "autoatención", zh: "自注意力", hi: "स्व-ध्यान" },
-      "dataset":          { vi: "tập dữ liệu", es: "conjunto de datos", zh: "数据集", hi: "डेटा संग्रह" },
-      "gradient descent": { vi: "hạ gradient", es: "descenso de gradiente", zh: "梯度下降", hi: "प्रवणता अवरोहण" },
-      "loss function":    { vi: "hàm mất mát", es: "función de pérdida", zh: "损失函数", hi: "हानि फलन" },
-      "learning rate":    { vi: "tốc độ học", es: "tasa de aprendizaje", zh: "学习率", hi: "सीखने की दर" },
-      "overfitting":      { vi: "quá khớp", es: "sobreajuste", zh: "过拟合", hi: "अति-अनुकूलन" },
-      "cross-validation": { vi: "kiểm định chéo", es: "validación cruzada", zh: "交叉验证", hi: "क्रॉस-सत्यापन" },
-      "batch":            { vi: "lô", es: "lote", zh: "批次", hi: "समूह" },
-      "epoch":            { vi: "vòng huấn luyện", es: "época", zh: "轮次", hi: "चक्र" },
-      "early stopping":   { vi: "dừng sớm", es: "parada temprana", zh: "早停", hi: "शीघ्र रोक" },
-      "checkpoint":       { vi: "điểm lưu", es: "punto de control", zh: "检查点", hi: "जाँच बिंदु" }
+      "transformer":      { vi: "bộ biến đổi", es: "transformador", zh: "变换器", hi: "ट्रांसफ़ॉर्मर", ko: "트랜스포머" },
+      "self-attention":   { vi: "tự chú ý", es: "autoatención", zh: "自注意力", hi: "स्व-ध्यान", ko: "셀프 어텐션" },
+      "dataset":          { vi: "tập dữ liệu", es: "conjunto de datos", zh: "数据集", hi: "डेटा संग्रह", ko: "데이터셋" },
+      "gradient descent": { vi: "hạ gradient", es: "descenso de gradiente", zh: "梯度下降", hi: "प्रवणता अवरोहण", ko: "경사 하강법" },
+      "loss function":    { vi: "hàm mất mát", es: "función de pérdida", zh: "损失函数", hi: "हानि फलन", ko: "손실 함수" },
+      "learning rate":    { vi: "tốc độ học", es: "tasa de aprendizaje", zh: "学习率", hi: "सीखने की दर", ko: "학습률" },
+      "overfitting":      { vi: "quá khớp", es: "sobreajuste", zh: "过拟合", hi: "अति-अनुकूलन", ko: "과적합" },
+      "cross-validation": { vi: "kiểm định chéo", es: "validación cruzada", zh: "交叉验证", hi: "क्रॉस-सत्यापन", ko: "교차 검증" },
+      "batch":            { vi: "lô", es: "lote", zh: "批次", hi: "समूह", ko: "배치" },
+      "epoch":            { vi: "vòng huấn luyện", es: "época", zh: "轮次", hi: "चक्र", ko: "에폭" },
+      "early stopping":   { vi: "dừng sớm", es: "parada temprana", zh: "早停", hi: "शीघ्र रोक", ko: "조기 종료" },
+      "checkpoint":       { vi: "điểm lưu", es: "punto de control", zh: "检查点", hi: "जाँच बिंदु", ko: "체크포인트" }
     },
     quiz: [
       { q: "What do the authors adjust to avoid overfitting?", options: ["The learning rate", "The number of examples per batch", "The size of the dataset", "The validation set"], answer: 0 },
@@ -415,41 +416,46 @@ const PASSAGES = [
   },
   {
     id: "user-study",
-    title: { en: "Analyzing a user study", vi: "Phân tích một nghiên cứu người dùng", es: "Análisis de un estudio con usuarios", zh: "分析一项用户研究", hi: "एक उपयोगकर्ता अध्ययन का विश्लेषण" },
+    title: { en: "Analyzing a user study", vi: "Phân tích một nghiên cứu người dùng", es: "Análisis de un estudio con usuarios", zh: "分析一项用户研究", hi: "एक उपयोगकर्ता अध्ययन का विश्लेषण", ko: "사용자 연구 분석" },
     sentences: [
       { en: "We ran a [[within-subjects]] study with 24 participants.",
         tr: { vi: "Chúng tôi tiến hành một nghiên cứu [[within-subjects]] với 24 người tham gia.",
               es: "Realizamos un estudio [[within-subjects]] con 24 participantes.",
               zh: "我们进行了一项有24名参与者的[[within-subjects]]研究。",
-              hi: "हमने 24 प्रतिभागियों के साथ एक [[within-subjects]] अध्ययन किया।" } },
+              hi: "हमने 24 प्रतिभागियों के साथ एक [[within-subjects]] अध्ययन किया।",
+              ko: "우리는 24명의 참가자를 대상으로 [[within-subjects]] 연구를 수행했습니다." } },
       { en: "The order of conditions was [[counterbalanced]] to reduce [[learning effects]].",
         tr: { vi: "Thứ tự các điều kiện được [[counterbalanced]] để giảm [[learning effects]].",
               es: "El orden de las condiciones fue [[counterbalanced]] para reducir los [[learning effects]].",
               zh: "实验条件的顺序经过了[[counterbalanced]]处理，以减少[[learning effects]]。",
-              hi: "[[learning effects]] को कम करने के लिए स्थितियों के क्रम को [[counterbalanced]] किया गया।" } },
+              hi: "[[learning effects]] को कम करने के लिए स्थितियों के क्रम को [[counterbalanced]] किया गया।",
+              ko: "[[learning effects]]를 줄이기 위해 조건의 순서를 [[counterbalanced]] 방식으로 배치했습니다." } },
       { en: "We compared task completion times using a [[paired t-test]].",
         tr: { vi: "Chúng tôi so sánh thời gian hoàn thành nhiệm vụ bằng [[paired t-test]].",
               es: "Comparamos los tiempos de finalización de la tarea con una [[paired t-test]].",
               zh: "我们使用[[paired t-test]]比较任务完成时间。",
-              hi: "हमने [[paired t-test]] का उपयोग करके कार्य पूरा करने के समय की तुलना की।" } },
+              hi: "हमने [[paired t-test]] का उपयोग करके कार्य पूरा करने के समय की तुलना की।",
+              ko: "[[paired t-test]] 방법으로 과제 완료 시간을 비교했습니다." } },
       { en: "The difference was statistically significant, with a [[p-value]] below 0.05.",
         tr: { vi: "Sự khác biệt có ý nghĩa thống kê, với [[p-value]] nhỏ hơn 0,05.",
               es: "La diferencia fue estadísticamente significativa, con un [[p-value]] menor que 0,05.",
               zh: "该差异具有统计显著性，[[p-value]]小于0.05。",
-              hi: "अंतर सांख्यिकीय रूप से महत्वपूर्ण था, जिसमें [[p-value]] 0.05 से कम था।" } },
+              hi: "अंतर सांख्यिकीय रूप से महत्वपूर्ण था, जिसमें [[p-value]] 0.05 से कम था।",
+              ko: "그 차이는 [[p-value]] < 0.05로 통계적으로 유의했습니다." } },
       { en: "We also report the [[effect size]] so readers can judge practical importance.",
         tr: { vi: "Chúng tôi cũng báo cáo [[effect size]] để người đọc có thể đánh giá tầm quan trọng thực tế.",
               es: "También informamos el [[effect size]] para que los lectores puedan juzgar la importancia práctica.",
               zh: "我们还报告了[[effect size]]，以便读者判断其实际意义。",
-              hi: "हम [[effect size]] भी बताते हैं ताकि पाठक व्यावहारिक महत्व का आकलन कर सकें।" } }
+              hi: "हम [[effect size]] भी बताते हैं ताकि पाठक व्यावहारिक महत्व का आकलन कर सकें।",
+              ko: "독자가 실질적인 중요성을 판단할 수 있도록 [[effect size]]도 함께 보고합니다." } }
     ],
     terms: {
-      "within-subjects":  { vi: "nội chủ thể", es: "intrasujetos", zh: "被试内", hi: "अंतः-विषय" },
-      "counterbalanced":  { vi: "cân bằng chéo", es: "contrabalanceado", zh: "平衡", hi: "प्रति-संतुलित" },
-      "learning effects": { vi: "hiệu ứng học tập", es: "efectos de aprendizaje", zh: "学习效应", hi: "सीखने के प्रभाव" },
-      "paired t-test":    { vi: "kiểm định t ghép cặp", es: "prueba t pareada", zh: "配对t检验", hi: "युग्मित t-परीक्षण" },
-      "p-value":          { vi: "giá trị p", es: "valor p", zh: "p值", hi: "p-मान" },
-      "effect size":      { vi: "độ lớn hiệu ứng", es: "tamaño del efecto", zh: "效应量", hi: "प्रभाव आकार" }
+      "within-subjects":  { vi: "nội chủ thể", es: "intrasujetos", zh: "被试内", hi: "अंतः-विषय", ko: "피험자 내" },
+      "counterbalanced":  { vi: "cân bằng chéo", es: "contrabalanceado", zh: "平衡", hi: "प्रति-संतुलित", ko: "역균형화" },
+      "learning effects": { vi: "hiệu ứng học tập", es: "efectos de aprendizaje", zh: "学习效应", hi: "सीखने के प्रभाव", ko: "학습 효과" },
+      "paired t-test":    { vi: "kiểm định t ghép cặp", es: "prueba t pareada", zh: "配对t检验", hi: "युग्मित t-परीक्षण", ko: "대응표본 t검정" },
+      "p-value":          { vi: "giá trị p", es: "valor p", zh: "p值", hi: "p-मान", ko: "p값" },
+      "effect size":      { vi: "độ lớn hiệu ứng", es: "tamaño del efecto", zh: "效应量", hi: "प्रभाव आकार", ko: "효과 크기" }
     },
     quiz: [
       { q: "Why was the order of conditions counterbalanced?", options: ["To increase the number of participants", "To reduce learning effects", "To compute the p-value", "To shorten the tasks"], answer: 1 },
@@ -934,5 +940,3 @@ $("logCount").textContent = log.length;
 renderControls(); renderQuiz(); renderReader();
 showTab(state.tab === "reader" || !state.tab ? "reader" : state.tab);
 </script>
-</body>
-</html>

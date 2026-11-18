@@ -1,0 +1,74 @@
+# Publishes TAPER to GitHub Pages, together with the BusyTeX files that let it compile
+# LaTeX in the browser. Turn it on in the repository: Settings → Pages → Source: "GitHub Actions".
+#
+# The BusyTeX assets (~520 MB archive) are downloaded during the build and are NOT stored in git.
+# The site is about 700 MB (under the 1 GB GitHub Pages limit). Browsers download only what they
+# use: the engine and the "recommended" TeX bundle on the first compile (~235 MB), and the "extra"
+# bundle only if a paper needs a package from it. Everything is cached by the browser afterwards.
+name: Deploy TAPER to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Run unit tests
+        run: npm install --no-audit --no-fund && npm test
+
+      - name: Assemble the site
+        run: |
+          mkdir -p _site
+          cp -r index.html css src sample docs tex _site/
+          touch _site/.nojekyll
+
+      - name: Cache BusyTeX assets
+        id: busytex-cache
+        uses: actions/cache@v4
+        with:
+          path: busytex-cache
+          key: busytex-1.4.1
+
+      - name: Download BusyTeX (TeX Live 2026 in WebAssembly)
+        if: steps.busytex-cache.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p busytex-cache
+          npx --yes texlyre-busytex@1.4.1 download-assets busytex-cache
+
+      - name: Add BusyTeX to the site
+        run: |
+          mkdir -p _site/vendor
+          cp -r busytex-cache/busytex _site/vendor/busytex
+          du -sh _site _site/vendor/busytex
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

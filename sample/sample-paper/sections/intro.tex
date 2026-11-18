@@ -1,0 +1,9 @@
+\section{Introduction}
+\label{sec:intro}
+Language models trained with next-token prediction store a surprising amount of factual knowledge in their parameters~\citep{petroni2019lama}.
+However, this knowledge is incomplete, hard to update, and impossible to attribute to a source.
+When a model does not know an answer, it often generates a plausible but false statement, a failure mode known as hallucination.
+
+Retrieval-augmented generation addresses this problem by giving the model access to an external corpus at inference time~\citep{lewis2020rag}.
+The quality of the final answer therefore depends heavily on the quality of the retrieved passages. % this matters
+In this paper we ask a simple question: can a better ranking of the evidence make answers more faithful?

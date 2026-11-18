@@ -1,2 +1,4 @@
 node_modules/
 __pycache__/
+vendor/
+.DS_Store
