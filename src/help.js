@@ -95,7 +95,7 @@ export const TOPICS = [
 
   { id: "data", title: "Study data", html: `
 <p>For the course study, TAPER logs what happens in the reader: opening papers, level changes, term lookups, reading time, optional check-ins and quizzes, plan changes. Each row has the reader profile and week.</p>
-<p>Export the log as CSV or JSON after each session. It stays in this browser until you clear it. API keys and paper text are never written to the log.</p>` },
+<p>There is no Study data tab: the log is kept in the background. Export it as CSV or JSON from <b>Settings → Study data</b> after each session (<b>View the log</b> shows it). It stays in this browser until you clear it. API keys and paper text are never written to the log.</p>` },
 
   { id: "privacy", title: "Privacy and costs", html: `
 <ul>

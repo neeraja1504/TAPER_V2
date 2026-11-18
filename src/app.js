@@ -1040,7 +1040,7 @@ $("exportCsv").onclick = () => { closeReading(); saveFile(`taper-log-${stamp()}.
 $("exportJson").onclick = () => { closeReading(); saveFile(`taper-log-${stamp()}.json`, JSON.stringify({ exported: new Date().toISOString(), profiles: profiles.map(({ id, name, lang, field, englishLevel, startDate, weeks, plan, checkins }) => ({ id, name, lang, field, englishLevel, startDate, weeks, plan, checkins })), rows: log }, null, 2), "application/json"); };
 $("clearLog").onclick = () => { $("clearConfirm").hidden = false; };
 $("clearNo").onclick = () => { $("clearConfirm").hidden = true; };
-$("clearYes").onclick = () => { log = []; local.set("log", log); $("logCount").textContent = 0; $("clearConfirm").hidden = true; renderData(); toast("Log cleared"); };
+$("clearYes").onclick = () => { log = []; local.set("log", log); $("logCount").textContent = 0; $("clearConfirm").hidden = true; if (state.tab === "data") renderData(); toast("Log cleared"); };
 
 /* ======================= start ======================= */
 $("logCount").textContent = log.length;
