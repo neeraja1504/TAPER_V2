@@ -51,7 +51,7 @@ So moving up a week, or reopening a paper, costs no LLM calls. Levels are also c
 | `tex/` | xeCJK (LPPL) and algorithms/algorithmicx (LGPL/LPPL), unmodified from TeX Live: added to browser compiles only when a paper loads them, because no BusyTeX bundle contains them |
 | `tools/make_sample.py` | Builds `sample/sample-paper.zip` |
 | `src/sample.js` | The bundled sample: turns `sample/translations/*.json` into translation records; which levels have pre-built PDFs |
-| `sample/translations/` | Sample translations, one editable JSON per language (`terms` + `sents` by sentence id), and `terms.json` with the English definitions |
+| `sample/translations/` | Sample translations, one editable JSON per language (`terms`, `defs` = definitions in that language, and `sents` by sentence id; raise `SAMPLE.rev` in `src/sample.js` after editing so browsers refresh their copy), and `terms.json` with the English definitions |
 | `sample/pdfs/` | Pre-compiled sample PDFs (`original.pdf`, `<lang>/<termMode>-<share>.pdf`) |
 | `tools/build_sample_pdfs.mjs` | Rebuilds `sample/pdfs/` with Tectonic or latexmk. Run it after editing a sample translation |
 | `.github/workflows/pages.yml` | Tests, then deploys the site + BusyTeX to GitHub Pages |

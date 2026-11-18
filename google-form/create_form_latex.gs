@@ -92,10 +92,10 @@ function createTaperLatexForm() {
       "Open the translator in a new tab and spend about 10 minutes with it:\n" + TAPER_URL + "\n\n" +
       "1. Settings: paste the API key the study team gave you (or your own) and keep the suggested models.\n" +
       "2. My plan: enter your Participant ID and language, then press \"Draft a plan with AI\" and look at the plan. You can edit it.\n" +
-      "3. Translate: press \"Use the sample paper\" (or upload a paper's LaTeX .zip from arXiv) and press Translate.\n" +
+      "3. Translate: press \"Use the sample paper\" (or upload a paper's LaTeX .zip from arXiv) and press Start translating.\n" +
       "4. Reader: the translated PDF is large on the left, the English original on the right. " +
-      "Try at least 3 levels, click a few coloured technical terms, and try the Side by side / Translated / Original buttons.\n" +
-      "5. Open the Glossary and the Report, and, if you like, \"Check my understanding\".\n" +
+      "Try at least 3 levels, click a few coloured technical terms, and try the Both papers / Translation only / English original only buttons.\n" +
+      "5. Open the Glossary of terms and the Translation quality report, and, if you like, \"Check my understanding\".\n" +
       "6. Go to the Library and open the paper again: this costs nothing.\n\n" +
       "Use the ? buttons whenever something is unclear. Then come back to this form."
     );

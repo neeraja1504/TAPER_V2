@@ -4,7 +4,7 @@
  *
  * sample/sample-paper.zip           LaTeX source
  * sample/translations/terms.json    English glossary definitions
- * sample/translations/<lang>.json   glossary translations + one translation per sentence
+ * sample/translations/<lang>.json   glossary translations, definitions in that language (defs), one translation per sentence
  * sample/pdfs/original.pdf          the English original
  * sample/pdfs/<lang>/<level>.pdf    compiled levels (see tools/build_sample_pdfs.mjs)
  */
@@ -16,6 +16,7 @@ export const SAMPLE = {
   pdfs: "sample/pdfs/",
   langs: ["vi", "es", "zh", "hi", "ko", "ja", "pt", "fr", "ru"],
   version: "2026-11-18",
+  rev: 2,   // raise when the sample files change, so browsers that already hold the sample refresh it
   /* Levels with a pre-compiled PDF: every 5% of English sentences with terms in English,
      plus the two fully native levels. */
   hasPdf: level => (level.termMode === "english" && level.share % 5 === 0) || (level.share === 0 && ["native", "gloss"].includes(level.termMode))
@@ -24,7 +25,7 @@ export const SAMPLE = {
 /* Builds a translation record (the same shape the pipeline produces) from a sample file. */
 export function sampleTranslation(doc, paperId, data, defs) {
   const order = Object.keys(defs);
-  const terms = order.filter(en => data.terms[en]).map((en, i) => ({ id: "t" + (i + 1), en, native: data.terms[en], def: defs[en] }));
+  const terms = order.filter(en => data.terms[en]).map((en, i) => ({ id: "t" + (i + 1), en, native: data.terms[en], def: defs[en], defNative: data.defs?.[en] || "" }));
   const sents = {};
   for (const s of doc.sents) {
     const tr = data.sents[s.id];

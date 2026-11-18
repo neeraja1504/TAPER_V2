@@ -14,9 +14,10 @@ List the technical terms in the text below: domain-specific vocabulary a researc
 For each term give:
 - "en": the term in English, lower case unless it is an acronym or always capitalised, singular
 - "native": the standard ${lang} term used in ${lang} academic writing. If ${lang} researchers normally keep the English word, give the usual ${lang} rendering (transliteration or established loanword)
-- "def": a plain-English definition of at most 15 words
+- "def_native": a plain definition written in ${lang}, at most 20 words. This is what the reader sees first, so write it for a ${lang}-speaking researcher
+- "def": the same definition in plain English, at most 15 words
 
-Return only JSON: {"terms":[{"en":"...","native":"...","def":"..."}]}
+Return only JSON: {"terms":[{"en":"...","native":"...","def_native":"...","def":"..."}]}
 
 Text:
 """
@@ -34,13 +35,13 @@ export function glossaryVerifyPrompt(terms, lang, title) {
 Review this English → ${lang} glossary of technical terms. Report only real problems:
 - the ${lang} translation is wrong, non-standard, or not what ${lang} researchers actually use
 - the entry is not a technical term (an everyday word, a name, a dataset)
-- the definition is wrong
+- a definition is wrong, or the ${lang} definition is not written in ${lang}
 
-Return only JSON: {"fixes":[{"en":"term exactly as listed","native":"corrected ${lang} term, if the translation was the problem","def":"corrected definition, if needed","drop":true if it is not a technical term,"issue":"short reason"}]}
+Return only JSON: {"fixes":[{"en":"term exactly as listed","native":"corrected ${lang} term, if the translation was the problem","def_native":"corrected ${lang} definition, if needed","def":"corrected English definition, if needed","drop":true if it is not a technical term,"issue":"short reason"}]}
 Return {"fixes":[]} if everything is fine.
 
 Glossary:
-${json(terms.map(t => ({ en: t.en, native: t.native, def: t.def })))}`
+${json(terms.map(t => ({ en: t.en, native: t.native, def_native: t.defNative || "", def: t.def })))}`
   };
 }
 

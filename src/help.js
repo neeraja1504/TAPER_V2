@@ -4,12 +4,12 @@
 export const TOPICS = [
   { id: "start", title: "Getting started", html: `
 <p>TAPER translates an English research paper written in LaTeX into your language, then moves you toward reading it in English week by week. Technical terms come first: they stay in English from the start, because most of them only really exist in English.</p>
-<p><b>Try it first with the sample paper.</b> It is already translated into every language and opens instantly, with no API key and no credits. Change the level or the language at the top of the Reader.</p>
+<p><b>Try it first with the sample paper.</b> It is already translated into every language and opens instantly, with no API key and no credits. Change the reading level or the language at the top of the Read page.</p>
 <ol>
 <li><b>Set up a model.</b> In <a href="#settings">Settings</a>, paste an API key (Anthropic, OpenAI, Google Gemini, OpenRouter, or a local model) and pick a <em>translator</em> and a <em>verifier</em> model.</li>
-<li><b>Tell TAPER about you.</b> In <a href="#plan">My plan</a>, choose your language, your start date and how many weeks you want. Ask the AI to draft a plan, then edit it.</li>
+<li><b>Tell TAPER about you.</b> In <a href="#plan">My plan</a>, choose your language, your start date and how many weeks you want. Ask the AI to draft a plan, then edit it. Translate uses the plan's language and Read opens papers at the plan's level for the week; the amber <em>From my plan</em> strip on those pages shows what is being used.</li>
 <li><b>Translate a paper.</b> In <a href="#new">Translate</a>, upload the paper's LaTeX source as a .zip (on arXiv: "Other formats → Download source"). Or try the sample paper.</li>
-<li><b>Read.</b> The <a href="#reader">Reader</a> shows the translated PDF large, with the English original beside it. Click a coloured term to see it in both languages.</li>
+<li><b>Read.</b> The <a href="#reader">Read</a> page shows the translated PDF large, with the English original beside it. Click a coloured term to see it in both languages, with a definition in your language.</li>
 </ol>
 <p>Every paper is translated <b>once</b> per language. All reading levels are built from that translation, so moving up a week, or opening the paper again from the <a href="#library">Library</a>, costs no credits.</p>` },
 
@@ -41,18 +41,18 @@ export const TOPICS = [
 <li><b>Adjust with AI</b>: tell it how it is going ("too fast", "I'm comfortable, speed up") and it proposes changes for the remaining weeks.</li>
 <li><b>Edit by hand</b>: change any week's term mode, English share or note, then Save.</li>
 </ul>
-<p>The plan is a suggestion. In the Reader you can always pick a different level for a paper.</p>
+<p>The plan is a suggestion. On the Read page you can always pick a different level for a paper; <em>Back to my plan's level</em> returns to the plan.</p>
 <p>Several people can share one computer: each reader has their own profile and plan (header menu). The library of translations is shared, so nobody pays twice for the same paper.</p>` },
 
   { id: "reader", title: "The reader", html: `
 <p>The translated PDF fills the window. The English original sits beside it.</p>
 <ul>
-<li><b>Side by side / Translated / Original</b> (top right) maximise either PDF or show both. On narrow screens the panes stack.</li>
-<li><b>– and ⤢</b> on each pane minimise or maximise it.</li>
-<li><b>Level</b>: pick a preset, <em>Use my week</em>, or fine-tune terms and English share. Each level is compiled once and cached.</li>
+<li><b>Show: Both papers / Translation only / English original only</b> chooses which papers you see. The button at the top of each paper does the same. On narrow screens the papers stack.</li>
+<li><b>Hide controls</b> hides the menus so the paper fills the window. Scrolling down the paper does this too. Scroll back to the top, press <em>Show controls</em>, or press Esc to bring them back.</li>
+<li><b>Reading level</b>: the first choice is your plan's level for this week. Pick any other level from the list, or <em>Custom level…</em> to set the technical terms and the share of English sentences yourself. Each level is compiled once and cached.</li>
 <li><b>Coloured terms</b>: blue = English technical term, amber = translated term. Click one to see both languages and a definition. Lookups are counted in your study data.</li>
 <li><b>Download</b>: the PDF, or the translated LaTeX as a .zip (with fonts) to compile yourself or upload to Overleaf with the XeLaTeX compiler.</li>
-<li><b>Report</b>: the glossary, verifier corrections, and any sentences that were flagged or left in English.</li>
+<li><b>Translation quality report</b>: the glossary, verifier corrections, and any sentences that were flagged or left in English.</li>
 <li><b>Check my understanding</b> (optional): rate how a level felt, or ask for a short quiz. Nothing is required, and nothing pops up on its own.</li>
 </ul>` },
 
@@ -60,7 +60,7 @@ export const TOPICS = [
 <p>TAPER calls the model provider directly from your browser with your own key. Supported:</p>
 <ul>
 <li><b>Anthropic (Claude)</b>: default <code>claude-opus-5-5</code>. Keys: platform.claude.com.</li>
-<li><b>OpenAI</b>, <b>Google Gemini</b>, <b>OpenRouter</b>: paste a key, then <em>List models</em> and pick one.</li>
+<li><b>OpenAI</b>, <b>Google Gemini</b>, <b>OpenRouter</b>: paste a key, then <em>Load the model list</em> and pick one.</li>
 <li><b>Custom / local</b>: any OpenAI-compatible server, e.g. Ollama (<code>http://localhost:11434/v1</code>; start Ollama with <code>OLLAMA_ORIGINS=*</code> so the browser may call it).</li>
 </ul>
 <p><b>Translator vs verifier:</b> the translator writes the glossary and translations (and drafts plans and quizzes). The verifier checks them. They can be different providers. A strong model as verifier catches more problems; a cheaper translator plus a strong verifier is a reasonable way to save credits.</p>
@@ -72,7 +72,7 @@ export const TOPICS = [
 <li><b>Local helper</b> (most reliable): run <code>python run.py</code>. It uses latexmk + XeLaTeX from MacTeX / TeX Live, or Tectonic, if installed. To use it from the GitHub Pages site, run <code>python run.py --cors</code> and set the helper address in Settings to <code>http://localhost:8000</code>.</li>
 <li><b>In the browser</b>: BusyTeX (TeX Live 2026 in WebAssembly). Nothing to install, but the first compile downloads about 235 MB (the TeX engine and the common LaTeX packages), and a paper that needs less common packages downloads about 340 MB more once. The browser caches everything. EPS figures and a few rare packages will not compile this way.</li>
 </ul>
-<p><em>Auto</em> uses the local helper when it answers and the browser otherwise. If a compile fails, open the log in the error message, or download the LaTeX .zip and compile it in Overleaf (set the compiler to XeLaTeX).</p>
+<p><em>Auto</em> uses the local helper when it answers and the browser otherwise. If a compile fails, open the log in the error message, or use <em>Download → Translated LaTeX source (.zip)</em> and compile it in Overleaf (set the compiler to XeLaTeX).</p>
 <p>The original English PDF is compiled with the paper's own engine (usually pdfLaTeX), or you can upload the PDF from arXiv instead.</p>` },
 
   { id: "library", title: "Library and credits", html: `

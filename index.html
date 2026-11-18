@@ -14,25 +14,25 @@
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
-<header class="top">
+<header class="top" id="appHeader">
   <div class="brand">
     <h1><span>TA</span><b>PER</b></h1>
     <p>Translation-Assisted Progressive English Reading</p>
   </div>
-  <div class="who">
-    <label class="field inline"><span class="label">Reader</span><select id="profileSel" aria-label="Reader profile"></select></label>
-    <span class="badge" id="weekBadge"></span>
-    <button class="help-btn big" id="headerHelp" title="Help for this page" aria-label="Help for this page">?</button>
-  </div>
   <nav class="tabs" role="tablist" aria-label="Sections">
-    <button role="tab" data-tab="library" aria-selected="true">Library</button>
-    <button role="tab" data-tab="new" aria-selected="false">Translate</button>
-    <button role="tab" data-tab="reader" aria-selected="false">Reader</button>
-    <button role="tab" data-tab="plan" aria-selected="false">My plan</button>
-    <button role="tab" data-tab="settings" aria-selected="false">Settings</button>
-    <button role="tab" data-tab="data" aria-selected="false">Study data<span class="count" id="logCount">0</span></button>
+    <button role="tab" data-tab="library" aria-selected="true" title="Every paper you have translated">Library</button>
+    <button role="tab" data-tab="plan" aria-selected="false" title="Your language and your week-by-week reading levels">My plan</button>
+    <button role="tab" data-tab="new" aria-selected="false" title="Translate a new paper into your plan's language">Translate</button>
+    <button role="tab" data-tab="reader" aria-selected="false" title="Read a paper at this week's level">Read</button>
+    <button role="tab" class="util-first" data-tab="settings" aria-selected="false" title="API keys, models and PDF compiling">Settings</button>
+    <button role="tab" data-tab="data" aria-selected="false" title="The study log recorded in this browser">Study data<span class="count" id="logCount">0</span></button>
     <button role="tab" data-tab="help" aria-selected="false">Help</button>
   </nav>
+  <div class="who">
+    <label class="field inline"><span class="label">Reading as</span><select id="profileSel" aria-label="Who is reading (reader profile)"></select></label>
+    <button class="badge plan-chip" id="weekBadge" data-goto="plan"></button>
+    <button class="btn small" id="headerHelp" title="Open help for the page you are on">? Help for this page</button>
+  </div>
 </header>
 
 <main id="main">
@@ -42,19 +42,21 @@
       <div><h2>Library</h2><p class="hint">Every paper you have translated. Opening one again costs no credits.</p></div>
       <button class="help-btn" data-help="library" aria-label="Help: library">?</button>
     </div>
+    <div class="plan-strip" data-plan-strip="library"></div>
     <div class="card welcome" id="welcome" hidden>
       <h3>Welcome to TAPER</h3>
       <p class="hint">The sample paper below is already translated into every language, so you can try the reader right now, with no API key and no credits. <button class="link" id="openSample">Open the sample paper</button></p>
       <ol class="steps">
+        <li><b>Make your plan.</b> Your language, start date and how many weeks. Translate and Read both follow it. <button class="link" data-goto="plan">Open My plan</button></li>
         <li><b>Add a model.</b> Paste an API key and choose a translator and verifier. <button class="link" data-goto="settings">Open Settings</button></li>
-        <li><b>Make your plan.</b> Your language, start date and how many weeks. <button class="link" data-goto="plan">Open My plan</button></li>
-        <li><b>Translate a paper.</b> Upload the LaTeX source (.zip), or try the sample. <button class="link" data-goto="new">Translate a paper</button></li>
+        <li><b>Translate a paper.</b> Upload the LaTeX source (.zip). It is translated into your plan's language. <button class="link" data-goto="new">Open Translate</button></li>
+        <li><b>Read it.</b> The paper opens at your plan's level for this week. <button class="link" data-goto="reader">Open Read</button></li>
       </ol>
     </div>
     <div class="row">
       <input type="search" id="libSearch" placeholder="Search titles" aria-label="Search the library">
-      <button class="btn" id="libExport">Export library</button>
-      <label class="btn">Import library<input type="file" id="libImport" accept=".zip" hidden></label>
+      <button class="btn" id="libExport" title="Save every paper, translation and quiz to one .zip file">Back up library (.zip)</button>
+      <label class="btn" title="Add the papers from a backup .zip made with Back up library">Restore from a backup<input type="file" id="libImport" accept=".zip" hidden></label>
       <span class="status" id="storageInfo"></span>
     </div>
     <div id="libList" class="lib-grid"></div>
@@ -68,14 +70,15 @@
       <div><h2>Translate a paper</h2><p class="hint">Upload the paper's LaTeX source. TAPER translates it once into your language; every reading level is built from that.</p></div>
       <button class="help-btn" data-help="translate" aria-label="Help: translating">?</button>
     </div>
+    <div class="plan-strip" data-plan-strip="new"></div>
     <div class="card">
-      <h3>1. Paper source</h3>
+      <h3>Step 1. Choose the paper</h3>
       <label class="drop" id="drop">
         <input type="file" id="zipInput" accept=".zip,application/zip" hidden>
         <strong>Drop the LaTeX .zip here</strong> or click to choose a file
         <span class="hint">arXiv: "Other formats → Download source". The .zip should hold the .tex files, figures and .bib/.bbl.</span>
       </label>
-      <div class="row"><button class="btn" id="useSample">Use the sample paper</button><span class="status" id="zipStatus"></span></div>
+      <div class="row"><button class="btn" id="useSample" title="Load the short sample paper that comes with TAPER">Use the sample paper</button><span class="status" id="zipStatus"></span></div>
       <div id="paperInfo" hidden>
         <dl class="facts" id="paperFacts"></dl>
         <div class="row" id="mainRow" hidden><label class="field"><span class="label">Main .tex file</span><select id="mainSel"></select></label></div>
@@ -84,18 +87,21 @@
       </div>
     </div>
     <div class="card">
-      <h3>2. Language and models</h3>
+      <h3>Step 2. Choose the language and models</h3>
       <div class="row">
         <label class="field"><span class="label">Translate into</span><select id="newLang"></select></label>
-        <label class="check"><input type="checkbox" id="newVerify" checked> Verify with the verifier model</label>
+        <label class="check"><input type="checkbox" id="newVerify" checked> Have the verifier model check the translation</label>
       </div>
+      <p class="note" id="planLangNote"></p>
       <p class="model-summary" id="modelSummary"></p>
       <p class="status" id="estimate"></p>
     </div>
     <div class="card">
+      <h3>Step 3. Translate</h3>
+      <p class="hint" id="newAfter"></p>
       <div class="row">
-        <button class="btn primary" id="startBtn" disabled>Translate</button>
-        <button class="btn" id="cancelBtn" hidden>Cancel</button>
+        <button class="btn primary" id="startBtn" disabled>Start translating</button>
+        <button class="btn" id="cancelBtn" hidden>Stop translating</button>
         <span class="status" id="dupNote"></span>
       </div>
       <div id="progressCard" hidden>
@@ -108,7 +114,7 @@
         </ol>
         <div class="progress"><div id="progBar"></div></div>
         <p class="status" id="progText"></p>
-        <details><summary>Details</summary><pre class="log" id="progLog"></pre></details>
+        <details><summary>Show the progress log</summary><pre class="log" id="progLog"></pre></details>
       </div>
     </div>
   </section>
@@ -119,68 +125,83 @@
       <p>Open a paper from your <button class="link" data-goto="library">Library</button>, or <button class="link" data-goto="new">translate one</button>.</p>
     </div>
     <div class="reader-shell" id="rdShell" hidden>
-      <div class="toolbar">
-        <div class="tb-title"><h2 id="rdTitle"></h2><span class="sub" id="rdLang"></span></div>
-        <label class="field inline"><span class="label">Language</span><select id="rdLangSel" aria-label="Translation language"></select></label>
-        <div class="tb-level">
-          <label class="field inline"><span class="label">Level</span><select id="rdLevel" aria-label="Translation level"></select></label>
-          <button class="btn small" id="rdUsePlan"></button>
-          <details class="tune" id="rdCustom">
-            <summary class="btn small">Fine-tune</summary>
-            <div class="tune-body">
-              <label class="field"><span class="label">Technical terms</span>
-                <select id="rdTermMode"><option value="native">Translate them</option><option value="gloss">Translate, English in brackets</option><option value="english">Keep in English</option></select></label>
-              <label class="field"><span class="label">Sentences in English: <output id="rdShareVal">0%</output></span><input type="range" id="rdShare" min="0" max="100" step="5" value="0"></label>
-              <button class="btn small primary" id="rdApply">Apply</button>
+      <div class="toolbar" id="rdToolbar">
+        <div class="tb-row">
+          <div class="tb-title"><h2 id="rdTitle"></h2><span class="sub" id="rdLang"></span></div>
+          <label class="field inline"><span class="label">Language</span><select id="rdLangSel" aria-label="Translation language"></select></label>
+          <div class="tb-level">
+            <label class="field inline"><span class="label">Reading level</span><select id="rdLevel" aria-label="Reading level: how much of the paper is in English"></select></label>
+            <button class="btn small" id="rdUsePlan" title="Go back to the level your plan sets for this week"></button>
+            <details class="tune popover" id="rdCustom">
+              <summary class="btn small" title="Set your own mix of your language and English">Custom level…</summary>
+              <div class="tune-body pop-body">
+                <strong>Custom reading level</strong>
+                <label class="field"><span class="label">Technical terms</span>
+                  <select id="rdTermMode"><option value="native">Translate them</option><option value="gloss">Translate, English in brackets</option><option value="english">Keep in English</option></select></label>
+                <label class="field"><span class="label">Sentences in English: <output id="rdShareVal">0%</output></span><input type="range" id="rdShare" min="0" max="100" step="5" value="0"></label>
+                <p class="hint">Free: no model calls. Your plan is not changed.</p>
+                <button class="btn small primary" id="rdApply">Show the paper at this level</button>
+              </div>
+            </details>
+          </div>
+        </div>
+        <div class="tb-row">
+          <div class="tb-view">
+            <span class="label">Show</span>
+            <div class="seg" role="group" aria-label="Which papers to show">
+              <button id="vSplit" aria-pressed="true" title="Translation and English original, side by side">Both papers</button>
+              <button id="vTr" aria-pressed="false" title="Only the translated paper">Translation only</button>
+              <button id="vOrig" aria-pressed="false" title="Only the English original">English original only</button>
             </div>
-          </details>
-        </div>
-        <div class="tb-view">
-          <div class="seg" role="group" aria-label="Layout">
-            <button id="vSplit" aria-pressed="true" title="Side by side">Side by side</button>
-            <button id="vTr" aria-pressed="false" title="Translated only">Translated</button>
-            <button id="vOrig" aria-pressed="false" title="Original only">Original</button>
+            <span class="label">Zoom</span>
+            <div class="seg" role="group" aria-label="Zoom">
+              <button id="zoomOut" title="Make the pages smaller" aria-label="Zoom out">−</button>
+              <button id="zoomFit" title="Make each page as wide as its panel">Fit width</button>
+              <button id="zoomIn" title="Make the pages larger" aria-label="Zoom in">+</button>
+            </div>
           </div>
-          <div class="seg" role="group" aria-label="Zoom">
-            <button id="zoomOut" title="Zoom out" aria-label="Zoom out">−</button>
-            <button id="zoomFit" title="Fit width">Fit</button>
-            <button id="zoomIn" title="Zoom in" aria-label="Zoom in">+</button>
+          <div class="tb-actions">
+            <button class="btn small" id="showGlossary" title="The technical terms of this paper in both languages">Glossary of terms</button>
+            <button class="btn small" id="showReport" title="What the verifier model corrected or flagged in this translation">Translation quality report</button>
+            <button class="btn small" id="openCheck" title="Optional: rate this level and take a short quiz">Check my understanding</button>
+            <details class="menu popover" id="dlMenu">
+              <summary class="btn small" title="Save this paper at the current level">Download ▾</summary>
+              <div class="menu-body pop-body">
+                <button id="dlPdf">Translated paper (PDF)</button>
+                <button id="dlZip">Translated LaTeX source (.zip)</button>
+              </div>
+            </details>
+            <button class="help-btn" data-help="reader" aria-label="Help: reading a paper" title="Help: reading a paper">?</button>
           </div>
-        </div>
-        <div class="tb-actions">
-          <button class="btn small" id="dlPdf">PDF</button>
-          <button class="btn small" id="dlZip">LaTeX .zip</button>
-          <button class="btn small" id="showGlossary">Glossary</button>
-          <button class="btn small" id="showReport">Report</button>
-          <button class="btn small" id="openCheck">Check my understanding</button>
-          <button class="help-btn" data-help="reader" aria-label="Help: reader">?</button>
         </div>
       </div>
       <div class="rd-status">
-        <div class="share-bar" title="Share of the text in your language"><div id="shareFill"></div></div>
+        <strong class="slim-title" id="rdSlimTitle"></strong>
+        <div class="share-bar" title="Share of the text in your language (amber) and in English (blue)"><div id="shareFill"></div></div>
         <span class="status" id="rdStatus"></span>
+        <span class="spacer"></span>
+        <button class="btn small" id="rdFocus" aria-pressed="false" title="Hide the menus so the paper fills the window. Scrolling down the paper does this too. Press Esc to bring them back.">Hide controls</button>
       </div>
       <div class="panes split" id="panes">
         <section class="pane" id="paneTr" aria-label="Translated paper">
-          <div class="pane-head"><span class="pip na"></span><span class="what">Translated</span><span class="sub" id="paneTrSub"></span>
-            <span class="spacer"></span><button class="icon" id="minTr" title="Minimise" aria-label="Minimise translated">–</button><button class="icon" id="maxTr" title="Maximise" aria-label="Maximise translated">⤢</button></div>
+          <div class="pane-head"><span class="pip na"></span><span class="what">Translation</span><span class="sub" id="paneTrSub"></span>
+            <span class="spacer"></span><button class="btn small pane-btn" id="maxTr"></button></div>
           <div class="pdf" id="pdfTr" tabindex="0"></div>
         </section>
         <section class="pane" id="paneOrig" aria-label="Original paper">
-          <div class="pane-head"><span class="pip en"></span><span class="what">Original</span><span class="sub">English</span>
-            <span class="spacer"></span><button class="icon" id="minOrig" title="Minimise" aria-label="Minimise original">–</button><button class="icon" id="maxOrig" title="Maximise" aria-label="Maximise original">⤢</button></div>
+          <div class="pane-head"><span class="pip en"></span><span class="what">English original</span>
+            <span class="spacer"></span><button class="btn small pane-btn" id="maxOrig"></button></div>
           <div class="pdf" id="pdfOrig" tabindex="0"></div>
           <div class="orig-actions" id="origActions" hidden>
             <p>The original PDF has not been made yet.</p>
-            <button class="btn primary" id="compileOrig">Compile the original</button>
-            <label class="btn">Upload the original PDF<input type="file" id="origUpload" accept="application/pdf" hidden></label>
+            <button class="btn primary" id="compileOrig">Build the original PDF from the source</button>
+            <label class="btn">Upload the original PDF instead<input type="file" id="origUpload" accept="application/pdf" hidden></label>
           </div>
         </section>
         <aside class="side" id="sidePanel" hidden aria-labelledby="sideTitle">
-          <div class="side-head"><h3 id="sideTitle"></h3><button class="icon" id="sideClose" aria-label="Close panel">×</button></div>
+          <div class="side-head"><h3 id="sideTitle"></h3><button class="btn small" id="sideClose">Close panel</button></div>
           <div class="side-body" id="sideBody"></div>
         </aside>
-        <div class="min-tabs" id="minTabs"></div>
       </div>
     </div>
   </section>
@@ -191,11 +212,20 @@
       <div><h2>My plan</h2><p class="hint">Who is reading, and how quickly to move toward English. The AI can draft or adjust the plan; you have the final say.</p></div>
       <button class="help-btn" data-help="plan" aria-label="Help: plan">?</button>
     </div>
+    <div class="card uses">
+      <h3>Where your plan is used</h3>
+      <ul class="uses-list">
+        <li><b>Translate</b> translates new papers into the <b>native language</b> you choose below. <button class="link" data-goto="new">Open Translate</button></li>
+        <li><b>Read</b> opens every paper at <b>this week's level</b> from the weekly plan below. You can still pick another level for one paper. <button class="link" data-goto="reader">Open Read</button></li>
+        <li><b>Library</b> offers each paper in your native language first. <button class="link" data-goto="library">Open Library</button></li>
+      </ul>
+      <p class="hint" id="planUseNow"></p>
+    </div>
     <form class="card" id="profileForm" autocomplete="off">
-      <h3>About you</h3>
+      <h3>Step 1. About you</h3>
       <div class="grid2">
         <label class="field"><span class="label">Name or participant ID</span><input type="text" id="pfName" required placeholder="e.g. P01"></label>
-        <label class="field"><span class="label">Native language</span><select id="pfLang"></select></label>
+        <label class="field"><span class="label">Native language (papers are translated into it)</span><select id="pfLang"></select></label>
         <label class="field"><span class="label">Field of study</span><input type="text" id="pfField" placeholder="e.g. Computer Science"></label>
         <label class="field"><span class="label">Start date</span><input type="date" id="pfStart"></label>
         <label class="field"><span class="label">Number of weeks</span><input type="number" id="pfWeeks" min="1" max="52" value="12"></label>
@@ -204,27 +234,27 @@
       </div>
       <fieldset class="q"><legend>Reading English technical papers is…</legend><div class="likert" id="pfEnglish"></div></fieldset>
       <label class="field"><span class="label">Anything the plan should consider (optional)</span><textarea id="pfNotes" rows="2" placeholder="e.g. I can read abstracts in English but methods sections are hard."></textarea></label>
-      <div class="row"><button class="btn primary" type="submit" id="pfSave">Save</button><button class="btn" type="button" id="pfNew">New reader…</button><button class="btn" type="button" id="pfDelete">Delete this reader</button><span class="status" id="pfStatus"></span></div>
+      <div class="row"><button class="btn primary" type="submit" id="pfSave">Save my details</button><button class="btn" type="button" id="pfNew">Add another reader…</button><button class="btn" type="button" id="pfDelete">Delete this reader</button><span class="status" id="pfStatus"></span></div>
     </form>
     <div class="card">
-      <div class="row spread"><h3>Weekly plan</h3><span class="badge" id="planNow"></span></div>
+      <div class="row spread"><h3>Step 2. Weekly plan: your reading level for each week</h3><span class="badge" id="planNow"></span></div>
       <div class="row">
         <button class="btn primary" id="planAI">Draft a plan with AI</button>
-        <button class="btn" id="planReset">Reset to the default plan</button>
+        <button class="btn" id="planReset" title="Replace the table below with the standard TAPER plan">Reset to the default plan</button>
         <span class="status" id="planStatus"></span>
       </div>
-      <details class="adjust"><summary>Adjust with AI…</summary>
+      <details class="adjust"><summary>Adjust with AI: tell it how it is going…</summary>
         <label class="field"><span class="label">How is it going? (optional)</span><textarea id="planFeedback" rows="2" placeholder="e.g. Week 3 felt too fast; or: I'm comfortable, let's speed up."></textarea></label>
-        <button class="btn" id="planAdjust">Suggest changes</button>
+        <button class="btn" id="planAdjust">Ask AI to suggest changes</button>
       </details>
       <div class="proposal" id="planProposal" hidden>
         <h4>AI suggestion</h4>
         <p id="planRationale"></p>
         <div class="tablewrap"><table><thead><tr><th>Week</th><th>Terms</th><th>English sentences</th><th>Focus</th></tr></thead><tbody id="proposalBody"></tbody></table></div>
-        <div class="row"><button class="btn primary" id="planAccept">Use this plan</button><button class="btn" id="planDiscard">Discard</button></div>
+        <div class="row"><button class="btn primary" id="planAccept">Use this plan</button><button class="btn" id="planDiscard">Discard this suggestion</button></div>
       </div>
       <div class="tablewrap"><table class="plan-table"><thead><tr><th>Week</th><th>Technical terms</th><th>English sentences</th><th>Focus for the week</th></tr></thead><tbody id="planBody"></tbody></table></div>
-      <div class="row"><button class="btn primary" id="planSave">Save plan</button></div>
+      <div class="row"><button class="btn primary" id="planSave">Save weekly plan</button></div>
     </div>
   </section>
 
@@ -249,13 +279,13 @@
           <p class="hint">Writes the glossary and the translation; drafts plans and quizzes.</p>
           <label class="field"><span class="label">Provider</span><select id="trProvider"></select></label>
           <label class="field"><span class="label">Model</span><input type="text" id="trModel" list="trModels" placeholder="model id"><datalist id="trModels"></datalist></label>
-          <div class="row"><button class="btn small" id="trList">List models</button><button class="btn small" id="trTest">Test</button><span class="status" id="trStatus"></span></div>
+          <div class="row"><button class="btn small" id="trList" title="Ask the provider which models your key can use">Load the model list</button><button class="btn small" id="trTest" title="Send one tiny request to check that the key and model work">Test this model</button><span class="status" id="trStatus"></span></div>
         </fieldset>
         <fieldset class="model-box" id="box-verifier"><legend>Verifier</legend>
           <p class="hint">Checks the glossary and every translated sentence.</p>
           <label class="field"><span class="label">Provider</span><select id="vrProvider"></select></label>
           <label class="field"><span class="label">Model</span><input type="text" id="vrModel" list="vrModels" placeholder="model id"><datalist id="vrModels"></datalist></label>
-          <div class="row"><button class="btn small" id="vrList">List models</button><button class="btn small" id="vrTest">Test</button><span class="status" id="vrStatus"></span></div>
+          <div class="row"><button class="btn small" id="vrList" title="Ask the provider which models your key can use">Load the model list</button><button class="btn small" id="vrTest" title="Send one tiny request to check that the key and model work">Test this model</button><span class="status" id="vrStatus"></span></div>
         </fieldset>
       </div>
       <div class="grid3">
@@ -273,7 +303,7 @@
         <label class="field"><span class="label">Browser TeX bundle</span><select id="setBundle"><option value="recommended">Recommended (~235 MB on first compile)</option><option value="basic">Basic (~125 MB first; more only when needed)</option></select></label>
         <label class="field"><span class="label">TeX package server for the browser (blank = off)</span><input type="text" id="setRemote"></label>
       </div>
-      <div class="row"><button class="btn" id="checkCompile">Check compilers</button><span class="status" id="compileInfo"></span></div>
+      <div class="row"><button class="btn" id="checkCompile">Check which PDF compilers are available</button><span class="status" id="compileInfo"></span></div>
       <label class="check"><input type="checkbox" id="setColor" checked> Colour technical terms in the PDF</label>
       <label class="check"><input type="checkbox" id="setKeepFont" checked> Keep the paper's Times / Palatino font when possible</label>
     </div>
@@ -289,10 +319,10 @@
     <div class="card">
       <div class="stats" id="stats"></div>
       <div class="row">
-        <button class="btn primary" id="exportCsv">Export CSV</button>
-        <button class="btn" id="exportJson">Export JSON</button>
-        <button class="btn" id="clearLog">Clear log…</button>
-        <span class="status" id="clearConfirm" hidden>Delete all rows? <button class="btn" id="clearYes">Delete</button> <button class="btn" id="clearNo">Keep</button></span>
+        <button class="btn primary" id="exportCsv">Download the log (CSV)</button>
+        <button class="btn" id="exportJson">Download the log (JSON)</button>
+        <button class="btn danger" id="clearLog">Delete all log entries…</button>
+        <span class="status" id="clearConfirm" hidden>Delete every row of the log? This cannot be undone. <button class="btn danger" id="clearYes">Yes, delete the log</button> <button class="btn" id="clearNo">No, keep it</button></span>
       </div>
       <div class="tablewrap"><table><thead><tr><th>Time</th><th>Reader</th><th>Week</th><th>Event</th><th>Paper</th><th>Lang</th><th>Level</th><th>Native %</th><th>Detail</th></tr></thead><tbody id="logBody"></tbody></table></div>
     </div>
@@ -309,7 +339,7 @@
 </main>
 
 <div class="drawer" id="helpDrawer" hidden role="dialog" aria-modal="false" aria-labelledby="helpDrawerTitle">
-  <div class="side-head"><h3 id="helpDrawerTitle">Help</h3><button class="icon" id="helpClose" aria-label="Close help">×</button></div>
+  <div class="side-head"><h3 id="helpDrawerTitle">Help</h3><button class="btn small" id="helpClose">Close help</button></div>
   <div class="drawer-body help-content" id="helpDrawerBody"></div>
   <div class="drawer-foot"><button class="link" id="helpMore">Open all help topics</button></div>
 </div>

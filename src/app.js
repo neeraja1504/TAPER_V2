@@ -100,6 +100,9 @@ function showTab(tab, { push = true } = {}) {
   if (!TABS.includes(tab)) tab = "library";
   if (state.tab === "reader" && tab !== "reader") closeReading();
   state.tab = tab;
+  document.body.dataset.tab = tab;
+  if (tab !== "reader") setSlim(false);
+  closePopovers();
   document.querySelectorAll("nav.tabs button").forEach(b => b.setAttribute("aria-selected", b.dataset.tab === tab));
   TABS.forEach(t => { $("view-" + t).hidden = t !== tab; });
   if (push && location.hash !== "#" + tab) history.replaceState(null, "", "#" + tab);
@@ -108,7 +111,10 @@ function showTab(tab, { push = true } = {}) {
   if (tab === "data") renderData();
   if (tab === "plan") renderPlanTab();
   if (tab === "settings") renderSettings();
-  if (tab === "new") { if (!pend.doc && !pend.loading) loadDefaultSample(); else updateNew(); }
+  if (tab === "new") {
+    if (!pend.langTouched) $("newLang").value = profile().lang; // follow the plan until the reader picks another language here
+    if (!pend.doc && !pend.loading) loadDefaultSample(); else updateNew();
+  }
   if (tab === "reader" && rd.paperId) startReading();
   if (tab === "reader" && !rd.paperId && !state.openingSample) { state.openingSample = true; openSample().finally(() => { state.openingSample = false; }); }
 }
@@ -136,7 +142,29 @@ function openHelp(id) {
 $("headerHelp").onclick = () => openHelp(TAB_TOPIC[state.tab] || "start");
 $("helpClose").onclick = () => { $("helpDrawer").hidden = true; };
 $("helpMore").onclick = () => { const id = $("helpDrawer").dataset.topic; $("helpDrawer").hidden = true; showTab("help"); setTimeout(() => { document.getElementById("help-" + id)?.scrollIntoView(); markToc(id); }, 50); };
-document.addEventListener("keydown", e => { if (e.key === "Escape") { $("helpDrawer").hidden = true; closePop(); } });
+document.addEventListener("keydown", e => {
+  if (e.key !== "Escape") return;
+  const open = document.querySelector("details.popover[open]");
+  if (open) { closePopovers(); open.querySelector("summary").focus(); return; }
+  if (!$("helpDrawer").hidden || !$("termPop").hidden) { $("helpDrawer").hidden = true; closePop(); return; }
+  if (document.body.classList.contains("rd-slim")) setSlim(false);
+});
+
+/* Popovers (<details class="popover">): kept inside the window, closed by Esc or a click elsewhere. */
+function placePopover(d) {
+  const body = d.querySelector(".pop-body"); if (!body) return;
+  body.style.left = "0px"; body.style.maxHeight = "";
+  const r = body.getBoundingClientRect(), pad = 8;
+  let shift = 0;
+  if (r.right > innerWidth - pad) shift = innerWidth - pad - r.right;
+  if (r.left + shift < pad) shift = pad - r.left;
+  body.style.left = shift + "px";
+  body.style.maxHeight = Math.max(120, innerHeight - r.top - pad) + "px";
+}
+function closePopovers(except) { document.querySelectorAll("details.popover[open]").forEach(d => { if (d !== except) d.open = false; }); }
+document.querySelectorAll("details.popover").forEach(d => d.addEventListener("toggle", () => { if (d.open) { closePopovers(d); placePopover(d); } }));
+document.addEventListener("click", e => { closePopovers(e.target.closest("details.popover")); });
+addEventListener("resize", () => document.querySelectorAll("details.popover[open]").forEach(placePopover));
 
 /* ======================= header ======================= */
 function renderHeader() {
@@ -145,12 +173,31 @@ function renderHeader() {
   sel.add(new Option("New reader…", "__new"));
   sel.value = profile().id;
   const p = profile(), w = currentWeek(p), l = planLevel(p, w);
-  $("weekBadge").textContent = `Week ${w} of ${p.weeks} · ${l.termMode === "english" ? "terms in English" : TERM_MODES[l.termMode].toLowerCase()}, ${l.share}% English`;
+  $("weekBadge").textContent = `My plan: week ${w} of ${p.weeks}`;
+  $("weekBadge").title = `${LANGS[p.lang].name}. This week's reading level: ${levelName(l)}. Click to open My plan.`;
+  renderPlanStrips();
+}
+/* The same summary of the plan on every page that depends on it, so the link to My plan is always visible. */
+const STRIP_TEXT = {
+  library: (lang, lvl) => `Papers open in ${lang} when they have been translated into it, at this week's level.`,
+  new: (lang, lvl) => `New papers are translated into ${lang}, then open in Read at this week's level.`
+};
+function renderPlanStrips() {
+  const p = profile(), w = currentWeek(p), l = planLevel(p, w), lang = LANGS[p.lang].name;
+  document.querySelectorAll("[data-plan-strip]").forEach(el => el.replaceChildren(
+    h("span", { class: "label" }, "From my plan"),
+    h("span", { class: "strip-main" }, h("b", {}, `${p.name} · ${lang} · week ${w} of ${p.weeks}`), ` · this week's level: `, h("b", {}, levelName(l))),
+    h("span", { class: "strip-why" }, STRIP_TEXT[el.dataset.planStrip](lang, l)),
+    h("button", { class: "btn small", "data-goto": "plan" }, "Change my plan")));
+  $("planUseNow").textContent = `Right now: ${lang}, week ${w} of ${p.weeks}, reading level "${levelName(l)}".`;
 }
 $("profileSel").onchange = e => {
   if (e.target.value === "__new") { addProfile(); return; }
   activeId = e.target.value; saveProfiles(); renderHeader(); logEvent("profile", { switchedTo: profile().name });
   if (state.tab === "plan") renderPlanTab();
+  if (state.tab === "library") renderLibrary();
+  if (state.tab === "new") { pend.langTouched = false; $("newLang").value = profile().lang; updateNew(); }
+  if (state.tab === "reader" && rd.paperId) renderLevelControls();
 };
 function addProfile() {
   const name = prompt("Name or participant ID for the new reader:", `Reader ${profiles.length + 1}`);
@@ -185,7 +232,8 @@ async function zipFiles(files) {
 /* ======================= the bundled sample paper ======================= */
 /* Adds the pre-translated sample paper to the library (once per sample version). */
 async function ensureSample(force = false) {
-  if (!force && local.get("sampleSeeded", null) === SAMPLE.version) return local.get("samplePaperId", null);
+  const seedKey = `${SAMPLE.version}#${SAMPLE.rev}`;
+  if (!force && local.get("sampleSeeded", null) === seedKey) return local.get("samplePaperId", null);
   try {
     const r = await fetch(SAMPLE.zip);
     if (!r.ok) return null;
@@ -201,11 +249,12 @@ async function ensureSample(force = false) {
     await db.put("papers", paper);
     const defs = (await (await fetch(SAMPLE.translations + "terms.json")).json()).terms;
     for (const lang of SAMPLE.langs) {
-      if (await db.get("translations", `${id}|${lang}`)) continue;
+      const have = await db.get("translations", `${id}|${lang}`);
+      if (have && !have.bundled) continue; // never replace a translation the reader made; do refresh the bundled one
       const t = await fetch(`${SAMPLE.translations}${lang}.json`);
       if (t.ok) await db.put("translations", sampleTranslation(doc, id, await t.json(), defs));
     }
-    local.set("sampleSeeded", SAMPLE.version); local.set("samplePaperId", id);
+    local.set("sampleSeeded", seedKey); local.set("samplePaperId", id);
     return id;
   } catch (e) { console.warn("[TAPER] could not add the sample paper:", e); return null; }
 }
@@ -256,19 +305,19 @@ async function renderLibrary() {
           : [h("span", { class: "meta" }, `${t.translator.model} → checked by ${t.verifier.model}`),
              h("span", { class: "meta" }, `${fmtN(t.usage.input)} in / ${fmtN(t.usage.output)} out tokens · ${t.usage.calls} calls · ${nRenders} level${nRenders === 1 ? "" : "s"} compiled`)],
         h("div", { class: "row" },
-          t.status === "complete" ? h("button", { class: "btn small primary", onclick: () => openReader(paper.id, t.lang) }, "Open") : h("button", { class: "btn small primary", onclick: () => loadPaperIntoNew(paper, t.lang) }, "Resume"),
-          h("button", { class: "btn small danger", onclick: async () => { if (confirm(`Delete the ${LANGS[t.lang]?.name || t.lang} translation of "${paper.title}"? This cannot be undone.`)) { await deleteTranslation(t.id); if (rd.paperId === paper.id && rd.lang === t.lang) clearReader(); renderLibrary(); } } }, "Delete"))));
+          t.status === "complete" ? h("button", { class: "btn small primary", onclick: () => openReader(paper.id, t.lang) }, `Read in ${LANGS[t.lang]?.name || t.lang}`) : h("button", { class: "btn small primary", onclick: () => loadPaperIntoNew(paper, t.lang) }, "Resume translating"),
+          h("button", { class: "btn small danger", onclick: async () => { if (confirm(`Delete the ${LANGS[t.lang]?.name || t.lang} translation of "${paper.title}"? This cannot be undone.`)) { await deleteTranslation(t.id); if (rd.paperId === paper.id && rd.lang === t.lang) clearReader(); renderLibrary(); } } }, "Delete this translation"))));
     }
     list.append(h("article", { class: "lib-card" },
       h("h3", {}, paper.title, paper.sample ? h("span", { class: "pill ok", style: "margin-left:8px;vertical-align:2px" }, "sample") : null),
       h("span", { class: "meta" }, `${paper.doc.stats.sentences} sentences · ${paper.doc.stats.words} words · added ${new Date(paper.createdAt).toLocaleDateString()}`),
       h("div", { class: "lib-open" },
-        h("label", { class: "field" }, h("span", { class: "label" }, "Read in"), pick),
-        mine ? h("button", { class: "btn small primary", onclick: () => openReader(paper.id, mine.lang) }, `Open in ${LANGS[mine.lang].name}`) : null),
+        mine ? h("button", { class: "btn primary", onclick: () => openReader(paper.id, mine.lang) }, `Read in ${LANGS[mine.lang].name} (my plan's language)`) : null,
+        h("label", { class: "field" }, h("span", { class: "label" }, mine ? "Or read it in another language" : "Read it in"), pick)),
       ts.length ? h("details", { class: "lib-details" }, h("summary", {}, `Translation details (${ts.length})`), langs) : null,
       h("div", { class: "row" },
         h("button", { class: "btn small", onclick: () => loadPaperIntoNew(paper) }, "Translate into another language"),
-        h("button", { class: "btn small danger", onclick: async () => { if (confirm(`Delete "${paper.title}" and all its translations?`)) { await deletePaper(paper.id); if (rd.paperId === paper.id) clearReader(); renderLibrary(); } } }, "Delete paper"))));
+        h("button", { class: "btn small danger", onclick: async () => { if (confirm(`Delete "${paper.title}" and all its translations?`)) { await deletePaper(paper.id); if (rd.paperId === paper.id) clearReader(); renderLibrary(); } } }, "Delete paper and its translations"))));
   }
   const est = await storageEstimate();
   $("storageInfo").textContent = est ? `Using ${fmtN(est.used / 1024 / 1024 | 0)} MB of browser storage` : "";
@@ -384,7 +433,7 @@ $("useSample").onclick = async () => {
   } catch (e) { $("zipStatus").className = "status bad"; $("zipStatus").textContent = e.message; }
 };
 $("origPdfInput").onchange = e => { pend.origPdf = e.target.files[0] || null; };
-$("newLang").onchange = () => updateNew();
+$("newLang").onchange = () => { pend.langTouched = true; updateNew(); };
 $("newVerify").onchange = () => updateNew();
 
 async function loadPaperIntoNew(paper, lang) {
@@ -402,7 +451,15 @@ async function updateNew() {
   $("modelSummary").replaceChildren(
     "Translator: ", h("strong", {}, `${PROVIDERS[tr.provider].label} · ${tr.model || "no model chosen"}`),
     ...(verify ? [" · Verifier: ", h("strong", {}, `${PROVIDERS[vr.provider].label} · ${vr.model || "no model chosen"}`)] : [" · no verification"]),
-    " ", h("button", { class: "link", "data-goto": "settings" }, "Change"));
+    " ", h("button", { class: "link", "data-goto": "settings" }, "Change models in Settings"));
+  {
+    const p = profile(), w = currentWeek(p), planLang = LANGS[p.lang].name, chosen = $("newLang").value;
+    const note = $("planLangNote");
+    if (chosen === p.lang) note.replaceChildren(`${planLang} is the language in your plan. `, h("button", { class: "link", "data-goto": "plan" }, "Change it in My plan"));
+    else note.replaceChildren(`Your plan's language is ${planLang}; this paper will be translated into ${LANGS[chosen].name} instead. `,
+      h("button", { class: "link", onclick: () => { pend.langTouched = false; $("newLang").value = p.lang; updateNew(); } }, `Use ${planLang}`));
+    $("newAfter").replaceChildren(`When it is finished the paper opens in Read at your plan's level for week ${w}: `, h("b", {}, levelName(planLevel(p, w))), ". Changing the level later is free.");
+  }
   const problem = configProblem(verify);
   const running = !!state.running;
   $("startBtn").disabled = !pend.doc || !pend.doc.stats.sentences || running || !!problem;
@@ -414,11 +471,11 @@ async function updateNew() {
     (verify ? ` · verifier ≈ ${fmtN(e.verifier.input)} + ${fmtN(e.verifier.output)}` : "") + ". Retries add a little more.";
   const lang = $("newLang").value;
   const existing = await db.get("translations", `${pend.hash}|${lang}`);
-  $("startBtn").textContent = existing && existing.status !== "complete" ? "Resume translation" : "Translate";
+  $("startBtn").textContent = existing && existing.status !== "complete" ? "Resume translating" : "Start translating";
   if (existing && existing.status === "complete") {
     $("startBtn").disabled = true;
     $("dupNote").className = "status ok";
-    $("dupNote").replaceChildren(`Already in your library in ${LANGS[lang].name}. `, h("button", { class: "link", onclick: () => openReader(pend.hash, lang) }, "Open it (no credits)"));
+    $("dupNote").replaceChildren(`Already in your library in ${LANGS[lang].name}. `, h("button", { class: "link", onclick: () => openReader(pend.hash, lang) }, "Read it now (no credits)"));
   } else if (existing) {
     $("dupNote").append(` A partial translation exists; Resume continues it (${Object.keys(existing.sents || {}).length} of ${pend.doc.stats.sentences} sentences done).`);
   }
@@ -469,7 +526,7 @@ $("startBtn").onclick = async () => {
     state.running = null;
     openReader(paperId, lang);
   } catch (e) {
-    const msg = e.name === "AbortError" ? "Cancelled. Your progress is saved; press Resume to continue." : `Stopped: ${e.message}. Progress so far is saved; press Resume to continue.`;
+    const msg = e.name === "AbortError" ? "Stopped. Your progress is saved; press Resume translating to continue." : `Stopped: ${e.message}. Progress so far is saved; press Resume translating to continue.`;
     addLog(msg); $("progText").textContent = msg; $("progText").className = e.name === "AbortError" ? "status" : "status bad";
     logEvent("translate-stopped", { error: e.message }, { paper: paperId.slice(0, 10), lang });
   } finally {
@@ -498,7 +555,8 @@ async function openReader(paperId, lang) {
   rd.level = saved ? clampLevel(saved) : planLevel(profile());
   local.set("lastOpen", { paperId, lang });
   $("rdEmpty").hidden = true; $("rdShell").hidden = false;
-  $("rdTitle").textContent = paper.title;
+  $("rdTitle").textContent = paper.title; $("rdTitle").title = paper.title;
+  $("rdSlimTitle").textContent = paper.title;
   $("rdLang").textContent = tr.bundled ? "Sample paper · pre-translated, included with TAPER" : `English → ${langLabel(lang)} · translated by ${tr.translator.model}${tr.verifier.model !== "none" ? `, checked by ${tr.verifier.model}` : ""}`;
   const langs = (await db.all("translations")).filter(t => t.paperId === paperId && t.status === "complete").map(t => t.lang);
   $("rdLangSel").replaceChildren(...langs.map(l => new Option(langLabel(l), l)));
@@ -528,15 +586,19 @@ async function getFiles() { if (!rd.files) rd.files = await readZip(rd.paper.zip
 function renderLevelControls() {
   const sel = $("rdLevel"); sel.replaceChildren();
   const p = profile(), w = currentWeek(p), pl = planLevel(p, w);
-  LEVELS.forEach((l, i) => sel.add(new Option(l.name, "p" + i)));
-  sel.add(new Option(`My week ${w}: ${levelName(pl)}`, "plan"));
-  const presetIdx = LEVELS.findIndex(l => l.termMode === rd.level.termMode && l.share === rd.level.share);
-  if (presetIdx < 0) { sel.add(new Option(`Custom: ${levelName(rd.level)}`, "custom")); sel.value = "custom"; }
-  else sel.value = "p" + presetIdx;
-  $("rdUsePlan").textContent = `Use my week ${w} level`;
-  $("rdUsePlan").disabled = pl.termMode === rd.level.termMode && pl.share === rd.level.share;
+  const same = (a, b) => a.termMode === b.termMode && a.share === b.share;
+  const planGroup = h("optgroup", { label: "From my plan" }, h("option", { value: "plan" }, `Week ${w} of my plan: ${levelName(pl)}`));
+  const all = h("optgroup", { label: "All levels, most native to most English" }, ...LEVELS.map((l, i) => h("option", { value: "p" + i }, l.name)));
+  sel.append(planGroup, all);
+  const presetIdx = LEVELS.findIndex(l => same(l, rd.level));
+  const onPlan = same(pl, rd.level);
+  if (onPlan) sel.value = "plan";
+  else if (presetIdx >= 0) sel.value = "p" + presetIdx;
+  else { sel.append(h("optgroup", { label: "Custom" }, h("option", { value: "custom" }, levelName(rd.level)))); sel.value = "custom"; }
+  $("rdUsePlan").textContent = `Back to my plan's level (week ${w})`;
+  $("rdUsePlan").hidden = onPlan;
   $("rdTermMode").value = rd.level.termMode; $("rdShare").value = rd.level.share; $("rdShareVal").textContent = rd.level.share + "%";
-  $("paneTrSub").textContent = `${LANGS[rd.lang].name} · ${levelName(rd.level)}`;
+  $("paneTrSub").textContent = `${LANGS[rd.lang].name} · ${levelName(rd.level)}${onPlan ? ` · your plan's level for week ${w}` : ""}`;
 }
 function setLevel(l, source) {
   closeReading();
@@ -612,9 +674,9 @@ async function showTranslated() {
       e.log ? h("pre", {}, summarizeLog(e.log)) : null,
       h("div", { class: "row" },
         h("button", { class: "btn primary", onclick: () => showTranslated() }, "Try again"),
-        h("button", { class: "btn", onclick: downloadZip }, "Download the LaTeX .zip"),
-        e.log ? h("button", { class: "btn", onclick: () => saveFile(`taper-compile-log-${stamp()}.txt`, e.log, "text/plain") }, "Save full log") : null,
-        h("button", { class: "btn", onclick: () => openHelp("compile") }, "Help")));
+        h("button", { class: "btn", onclick: downloadZip }, "Download the LaTeX source (.zip)"),
+        e.log ? h("button", { class: "btn", onclick: () => saveFile(`taper-compile-log-${stamp()}.txt`, e.log, "text/plain") }, "Save the full error log") : null,
+        h("button", { class: "btn", onclick: () => openHelp("compile") }, "Help with compiling")));
     $("pdfTr").replaceChildren(box);
     logEvent("compile-failed", { error: e.message.slice(0, 200) });
   }
@@ -669,17 +731,14 @@ $("origUpload").onchange = async e => {
   rd.paper.originalPdf = f; await db.put("papers", rd.paper); showOriginal();
 };
 
-/* layout: side by side, maximise, minimise */
+/* layout: both papers, or one of them filling the window */
 function setView(v, log_ = true) {
   rd.view = v; local.set("view", v);
   const panes = $("panes");
   panes.classList.toggle("only-tr", v === "tr"); panes.classList.toggle("only-orig", v === "orig"); panes.classList.toggle("split", v === "split");
   [["vSplit", "split"], ["vTr", "tr"], ["vOrig", "orig"]].forEach(([id, k]) => $(id).setAttribute("aria-pressed", v === k));
-  $("maxTr").textContent = v === "tr" ? "⤡" : "⤢"; $("maxTr").title = v === "tr" ? "Back to side by side" : "Maximise";
-  $("maxOrig").textContent = v === "orig" ? "⤡" : "⤢"; $("maxOrig").title = v === "orig" ? "Back to side by side" : "Maximise";
-  const mt = $("minTabs"); mt.replaceChildren();
-  if (v === "tr") mt.append(h("button", { class: "btn small", onclick: () => setView("split") }, "Show original"));
-  if (v === "orig") mt.append(h("button", { class: "btn small", onclick: () => setView("split") }, "Show translated"));
+  $("maxTr").textContent = v === "tr" ? "Show both papers" : "Show only the translation";
+  $("maxOrig").textContent = v === "orig" ? "Show both papers" : "Show only the English original";
   if (log_) logEvent("view", { view: v });
 }
 $("vSplit").onclick = () => setView("split");
@@ -687,8 +746,31 @@ $("vTr").onclick = () => setView("tr");
 $("vOrig").onclick = () => setView("orig");
 $("maxTr").onclick = () => setView(rd.view === "tr" ? "split" : "tr");
 $("maxOrig").onclick = () => setView(rd.view === "orig" ? "split" : "orig");
-$("minTr").onclick = () => setView("orig");
-$("minOrig").onclick = () => setView("tr");
+
+/* Hide the menus so the paper fills the window: by the button, or by scrolling down the paper.
+   Scrolling back to the top of the paper, the button, or Esc brings them back. */
+let slimAuto = false;
+function setSlim(on, auto = false) {
+  if (document.body.classList.contains("rd-slim") === on) return;
+  document.body.classList.toggle("rd-slim", on);
+  slimAuto = on && auto;
+  $("rdFocus").textContent = on ? "Show controls" : "Hide controls";
+  $("rdFocus").setAttribute("aria-pressed", on);
+  closePopovers();
+}
+$("rdFocus").onclick = () => setSlim(!document.body.classList.contains("rd-slim"));
+for (const id of ["pdfTr", "pdfOrig"]) {
+  let last = 0, down = 0;
+  $(id).addEventListener("scroll", e => {
+    const t = e.target.scrollTop, d = t - last; last = t;
+    if (!rd.pdf) return;
+    const slim = document.body.classList.contains("rd-slim");
+    down = d > 0 ? down + d : 0;
+    if (!slim && down > 80 && t > 160) { down = 0; setSlim(true, true); }
+    else if (slim && slimAuto && t < 8) setSlim(false);
+  }, { passive: true });
+}
+$("dlMenu").addEventListener("click", e => { if (e.target.closest(".menu-body button")) $("dlMenu").open = false; });
 $("zoomIn").onclick = () => { viewTr?.zoomBy(1.15); viewOrig?.zoomBy(1.15); };
 $("zoomOut").onclick = () => { viewTr?.zoomBy(1 / 1.15); viewOrig?.zoomBy(1 / 1.15); };
 $("zoomFit").onclick = () => { viewTr?.setZoom("fit"); viewOrig?.setZoom("fit"); };
@@ -721,7 +803,8 @@ function showTerm(id, anchor) {
     h("span", { class: "label" }, "Technical term"),
     h("span", { class: "en", lang: "en" }, t.en),
     h("span", { class: "na", lang: LANGS[rd.lang].tag }, t.native),
-    t.def ? h("span", { class: "def", lang: "en" }, t.def) : null,
+    t.defNative ? h("span", { class: "def-native", lang: LANGS[rd.lang].tag }, t.defNative) : null,
+    t.def ? h("span", { class: "def", lang: "en" }, t.defNative ? "In English: " + t.def : t.def) : null,
     h("span", { class: "status" }, `Appears in ${uses} sentence${uses === 1 ? "" : "s"} of this paper`));
   pop.hidden = false;
   const r = anchor.getBoundingClientRect(), pr = pop.getBoundingClientRect();
@@ -745,18 +828,19 @@ $("sideClose").onclick = closeSide;
 $("showGlossary").onclick = () => {
   const terms = [...rd.idx.list].sort((a, b) => a.en.localeCompare(b.en));
   const list = h("div", { class: "gloss-list" });
-  const draw = q => list.replaceChildren(...terms.filter(t => !q || t.en.toLowerCase().includes(q) || t.native.toLowerCase().includes(q)).map(t =>
-    h("div", { class: "gloss-item" }, h("span", { class: "en", lang: "en" }, t.en), h("span", { class: "na" }, t.native), t.def ? h("span", { class: "def" }, t.def) : null)));
+  const draw = q => list.replaceChildren(...terms.filter(t => !q || t.en.toLowerCase().includes(q) || t.native.toLowerCase().includes(q) || (t.defNative || "").toLowerCase().includes(q)).map(t =>
+    h("div", { class: "gloss-item" }, h("span", { class: "en", lang: "en" }, t.en), h("span", { class: "na", lang: LANGS[rd.lang].tag }, t.native),
+      t.defNative ? h("span", { class: "def-native", lang: LANGS[rd.lang].tag }, t.defNative) : null, t.def ? h("span", { class: "def", lang: "en" }, t.def) : null)));
   draw("");
   const search = h("input", { type: "search", placeholder: "Search terms", "aria-label": "Search terms", oninput: e => draw(e.target.value.trim().toLowerCase()) });
   const csv = () => {
     const esc = v => /[",\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v;
-    saveFile(`${slug(rd.paper.title)}-glossary-${rd.lang}.csv`, "english,native,definition\n" + terms.map(t => [t.en, t.native, t.def || ""].map(esc).join(",")).join("\n"), "text/csv");
+    saveFile(`${slug(rd.paper.title)}-glossary-${rd.lang}.csv`, "english,native,definition_native,definition_english\n" + terms.map(t => [t.en, t.native, t.defNative || "", t.def || ""].map(esc).join(",")).join("\n"), "text/csv");
     logEvent("download", { what: "glossary" });
   };
   openSide("glossary", `Glossary · ${terms.length} terms`, [
     h("p", { class: "hint" }, "The technical terms of this paper, checked by the verifier. Download them as flashcards (CSV works with Anki and Quizlet)."),
-    h("div", { class: "row" }, search, h("button", { class: "btn small", onclick: csv }, "Download CSV")), list]);
+    h("div", { class: "row" }, search, h("button", { class: "btn small", onclick: csv }, "Download as flashcards (CSV)")), list]);
 };
 
 $("showReport").onclick = () => {
@@ -769,7 +853,7 @@ $("showReport").onclick = () => {
   };
   const corrected = rd.idx.list.filter(t => t.fixed);
   const redo = items("flagged").length + items("fallback").length;
-  openSide("report", "Verification report", [
+  openSide("report", "Translation quality report", [
     h("section", {},
       h("dl", { class: "facts" },
         h("dt", {}, "Sentences"), h("dd", {}, `${r.sentences}: ${r.ok} passed, ${r.fixed} fixed by the verifier, ${r.flagged} flagged, ${r.fallback} left in English`),
@@ -808,14 +892,14 @@ $("openCheck").onclick = async () => {
     h("fieldset", { class: "q" }, h("legend", {}, "This mix of languages felt…"), h("div", { class: "likert", id: "lkC" })),
     h("fieldset", { class: "q" }, h("legend", {}, "Next time I'd like…"), h("div", { class: "opts" },
       ...[["more-native", "More of my language"], ["same", "The same"], ["more-english", "More English"]].map(([v, t]) => h("label", {}, h("input", { type: "radio", name: "ciNext", value: v }), " " + t)))),
-    h("div", { class: "row" }, h("button", { class: "btn primary", onclick: saveCheckin }, "Save"), h("span", { class: "status", id: "ciStatus" })));
+    h("div", { class: "row" }, h("button", { class: "btn primary", onclick: saveCheckin }, "Save my answers"), h("span", { class: "status", id: "ciStatus" })));
   const quizBox = h("section", { id: "quizBox" }, h("h4", {}, "Quiz"), h("p", { class: "hint" }, "Optional: four questions on the paper's main ideas."));
   openSide("check", "Check my understanding", [feel, quizBox]);
   likert($("lkU"), "ciU", "Not at all", "Completely");
   likert($("lkC"), "ciC", "Very hard", "Very comfortable");
   const cached = await db.get("quizzes", `${rd.paperId}|${rd.lang}`);
   if (cached) renderQuiz(cached.questions);
-  else quizBox.append(h("button", { class: "btn", onclick: generateQuiz }, "Make a quiz (1 model call)"));
+  else quizBox.append(h("button", { class: "btn", onclick: generateQuiz }, "Write a quiz for this paper (1 model call)"));
 };
 function saveCheckin() {
   const u = picked("ciU"), c = picked("ciC"), n = picked("ciNext");
@@ -858,7 +942,7 @@ function renderQuiz(qs) {
     result.textContent = `${right} of ${qs.length} correct.`;
     logEvent("quiz", { correct: right, answered, total: qs.length });
   };
-  box.append(showNative, ...items, h("div", { class: "row" }, h("button", { class: "btn primary", onclick: check }, "Check answers"), result));
+  box.append(showNative, ...items, h("div", { class: "row" }, h("button", { class: "btn primary", onclick: check }, "Check my answers"), result));
 }
 
 /* ======================= plan ======================= */
@@ -897,7 +981,7 @@ $("profileForm").addEventListener("submit", e => {
   const p = readProfileForm();
   p.plan = normalizePlan(planDraft, p.weeks);
   saveProfiles(); renderHeader(); renderPlanTab();
-  $("pfStatus").className = "status ok"; $("pfStatus").textContent = "Saved.";
+  $("pfStatus").className = "status ok"; $("pfStatus").textContent = "Saved. Translate and Read now use these details.";
   logEvent("profile-saved", { lang: p.lang, field: p.field, englishLevel: p.englishLevel, weeks: p.weeks, startDate: p.startDate });
 });
 $("pfWeeks").onchange = () => { const w = Math.max(1, Math.min(52, +$("pfWeeks").value || 12)); planDraft = normalizePlan(planDraft, w); renderPlanTable(); };
@@ -910,10 +994,10 @@ $("pfDelete").onclick = () => {
 $("planSave").onclick = () => {
   const p = readProfileForm();
   p.plan = normalizePlan(planDraft, p.weeks); saveProfiles(); renderHeader();
-  $("planStatus").className = "status ok"; $("planStatus").textContent = "Plan saved.";
+  $("planStatus").className = "status ok"; $("planStatus").textContent = "Plan saved. Read now opens papers at this week's level.";
   logEvent("plan-saved", { plan: p.plan.map(r => `${r.termMode}-${r.share}`).join(" ") });
 };
-$("planReset").onclick = () => { planDraft = defaultPlan(profile().weeks); renderPlanTable(); $("planStatus").className = "status"; $("planStatus").textContent = "Default plan loaded. Press Save plan to keep it."; };
+$("planReset").onclick = () => { planDraft = defaultPlan(profile().weeks); renderPlanTable(); $("planStatus").className = "status"; $("planStatus").textContent = "Default plan loaded. Press Save weekly plan to keep it."; };
 
 function showProposal(plan, rationale, kind) {
   proposal = { plan, kind };
@@ -960,7 +1044,7 @@ function renderSettings() {
   for (const [id, pv] of Object.entries(PROVIDERS)) {
     const inp = h("input", { type: "password", id: "key-" + id, placeholder: pv.keyHint, autocomplete: "off", value: keys[id] || "", "aria-label": `${pv.label} API key`,
       onchange: e => { const v = e.target.value.trim(); if (v) keys[id] = v; else delete keys[id]; saveKeys(); flash(`${pv.label} key ${v ? "saved" : "removed"}.`); updateNew(); } });
-    const show = h("button", { class: "btn small", type: "button", onclick: () => { inp.type = inp.type === "password" ? "text" : "password"; show.textContent = inp.type === "password" ? "Show" : "Hide"; } }, "Show");
+    const show = h("button", { class: "btn small", type: "button", onclick: () => { inp.type = inp.type === "password" ? "text" : "password"; show.textContent = inp.type === "password" ? "Show key" : "Hide key"; } }, "Show key");
     list.append(h("div", { class: "key-row" }, h("span", { class: "name" }, pv.label, pv.keyUrl ? [" ", h("a", { href: pv.keyUrl, target: "_blank", rel: "noopener", class: "hint" }, "get a key")] : null), inp, show));
   }
   $("customBase").value = settings.customBase || "";
@@ -982,7 +1066,7 @@ for (const [role, pre] of [["translator", "tr"], ["verifier", "vr"]]) {
   $(pre + "Provider").onchange = e => {
     const pv = PROVIDERS[e.target.value];
     settings[role] = { provider: e.target.value, model: pv.defaultModel || "" };
-    $(pre + "Model").value = settings[role].model; fillModelList(pre, pv.models); saveSettings(); flash(`${role[0].toUpperCase() + role.slice(1)}: ${pv.label}. ${pv.defaultModel ? "" : "Press List models to pick a model."}`); updateNew();
+    $(pre + "Model").value = settings[role].model; fillModelList(pre, pv.models); saveSettings(); flash(`${role[0].toUpperCase() + role.slice(1)}: ${pv.label}. ${pv.defaultModel ? "" : "Press Load the model list to pick a model."}`); updateNew();
   };
   $(pre + "Model").onchange = e => { settings[role].model = e.target.value.trim(); saveSettings(); flash("Model saved."); updateNew(); };
   $(pre + "List").onclick = async () => {

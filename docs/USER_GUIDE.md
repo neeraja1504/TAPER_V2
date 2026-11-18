@@ -24,7 +24,7 @@ Do not open `index.html` by double-clicking it. Browsers block parts of the app 
 TAPER comes with a short sample paper (*Grounding Answers in Retrieved Evidence*), already translated into all nine languages, with PDFs ready for every common level. On your first visit it opens in the Reader. It is also in the Library and is pre-selected on the Translate page.
 
 - Use it to try levels, the term popups, the glossary and the layout, with no API key and no credits.
-- Switch language with the **Language** menu at the top of the Reader.
+- Switch language with the **Language** menu at the top of the Read page.
 - If you delete it, the Library offers **Add it back**.
 
 The sample translations were written for this demo and have not been reviewed by native speakers.
@@ -38,8 +38,8 @@ The sample translations were written for this demo and have not been reviewed by
    | Provider | Where to get a key | Notes |
    |---|---|---|
    | Anthropic (Claude) | platform.claude.com | Default model `claude-opus-5-5` |
-   | OpenAI | platform.openai.com | Press **List models**, pick one |
-   | Google Gemini | aistudio.google.com | Press **List models**, pick one |
+   | OpenAI | platform.openai.com | Press **Load the model list**, pick one |
+   | Google Gemini | aistudio.google.com | Press **Load the model list**, pick one |
    | OpenRouter | openrouter.ai | Many models with one key |
    | Custom / local | — | Any OpenAI-compatible server, e.g. Ollama at `http://localhost:11434/v1` (start it with `OLLAMA_ORIGINS=*`) |
 
@@ -54,10 +54,12 @@ Keys are kept only in your browser: for this tab by default, or on this device i
 
 1. Enter your name or participant ID, native language, field, start date and number of weeks (12 by default).
 2. Rate how hard reading English papers is for you (1–5).
-3. Press **Draft a plan with AI**. The translator proposes a level for each week, with a short reason. Press **Use this plan**, or **Discard**.
-4. Change any week by hand (technical terms, percentage of English sentences, a note), then press **Save plan**.
+3. Press **Draft a plan with AI**. The translator proposes a level for each week, with a short reason. Press **Use this plan**, or **Discard this suggestion**.
+4. Change any week by hand (technical terms, percentage of English sentences, a note), then press **Save weekly plan**.
 
-Later, open **Adjust with AI…**, say how it is going ("week 3 was too fast"), and TAPER suggests changes for the remaining weeks. Nothing changes until you accept.
+Your plan is used on the other pages: Translate translates into the plan's language, and Read opens each paper at the plan's level for the current week. The amber **From my plan** strip on Library and Translate shows what is in use, with a **Change my plan** button.
+
+Later, open **Adjust with AI**, say how it is going ("week 3 was too fast"), and TAPER suggests changes for the remaining weeks. Nothing changes until you accept.
 
 Several people can share one computer. Use the **Reader** menu in the header to switch or add readers. Each reader has their own plan; the library is shared, so nobody pays twice for the same paper.
 
@@ -86,19 +88,20 @@ If you upload a paper that is already in your library, TAPER says so and opens i
 ## 5. Reading (Reader)
 
 - The **translated PDF** fills most of the window; the **English original** is beside it.
-  - **Side by side / Translated / Original** switch the layout.
-  - **–** and **⤢** on each pane minimise or maximise it. A button in the corner brings the other pane back.
+  - **Show: Both papers / Translation only / English original only** chooses which papers you see.
+  - The button at the top of each paper shows only that paper, or brings both back.
+  - **Hide controls** hides the menus so the paper fills the window. Scrolling down the paper does this too; scroll back to the top, press **Show controls**, or press Esc to bring them back.
   - **−  Fit  +** zoom.
 - **Level** sets how much is in English:
   - presets from *All native* to *All English*
-  - **Use my week N level** follows your plan
-  - **Fine-tune** sets the technical-term mode and the exact percentage of English sentences
+  - The first choice in **Reading level** is your plan's level for the week; **Back to my plan's level** returns to it
+  - **Custom level…** sets the technical-term mode and the exact percentage of English sentences
 
   The shortest sentences switch to English first, and once a sentence is English it stays English at higher levels. Each level is compiled once and kept, and **changing level never uses model credits**.
-- **Coloured terms**: blue is an English technical term, amber is a translated term. Click one to see both languages and a definition.
-- **PDF** and **LaTeX .zip** download the current level. The .zip includes the fonts; compile it with XeLaTeX (`latexmk -xelatex main.tex`, `tectonic main.tex`, or Overleaf with the XeLaTeX compiler).
+- **Coloured terms**: blue is an English technical term, amber is a translated term. Click one to see both languages and a definition in your language (the English definition is underneath).
+- **Download** saves the current level as a **PDF** or as **LaTeX source (.zip)**. The .zip includes the fonts; compile it with XeLaTeX (`latexmk -xelatex main.tex`, `tectonic main.tex`, or Overleaf with the XeLaTeX compiler).
 - **Glossary**: every technical term in the paper, searchable. **Download CSV** to make flashcards (Anki, Quizlet).
-- **Report**: what the verifier corrected, any sentences it flagged, any sentences left in English because they failed the checks, and the tokens used. **Translate … again** retries just those sentences.
+- **Translation quality report**: what the verifier corrected, any sentences it flagged, any sentences left in English because they failed the checks, and the tokens used. **Translate … again** retries just those sentences.
 - **Check my understanding** (optional): rate how the level felt, or make a short quiz (questions in English with your language underneath). Nothing pops up on its own and nothing is required.
 
 ## 6. Library
@@ -108,7 +111,7 @@ Every paper and language you have translated, with its status, models, tokens us
 - **Read in**: choose a language from the menu on a paper's card and it opens in that language, free. **Open in …** opens it in your own language. An unfinished translation in the menu opens the Translate page to resume it.
 - **Translation details** lists each language's status, models, tokens used and compiled levels, with **Resume** and **Delete**.
 - **Translate into another language** reuses the paper.
-- **Export library** saves everything (sources, translations, original PDFs, quizzes) to one .zip. Use it as a backup or to move to another browser. **Import library** merges such a file back.
+- **Back up library (.zip)** saves everything (sources, translations, original PDFs, quizzes) to one .zip. Use it as a backup or to move to another browser. **Restore from a backup** merges such a file back.
 
 The library lives in your browser. Clearing site data deletes it, so export now and then.
 
@@ -144,7 +147,7 @@ The **Study data** tab logs, per reader and week:
 - plan drafts, edits and acceptances
 - compiles and downloads
 
-**Export CSV** after each session. API keys and paper text are never logged.
+Press **Download the log (CSV)** after each session. API keys and paper text are never logged.
 
 ## 9. Troubleshooting
 

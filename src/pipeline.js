@@ -105,7 +105,7 @@ export async function runPipeline({ doc, tr, translator, verifier, settings = {}
       for (const t of Array.isArray(j.terms) ? j.terms : []) {
         if (!t || typeof t.en !== "string" || !t.en.trim()) continue;
         const k = normKey(t.en);
-        if (!found.has(k)) found.set(k, { en: t.en.trim(), native: String(t.native || "").trim(), def: String(t.def || "").trim() });
+        if (!found.has(k)) found.set(k, { en: t.en.trim(), native: String(t.native || "").trim(), def: String(t.def || "").trim(), defNative: String(t.def_native || "").trim() });
       }
       progress("glossary", ++done, chunks.length, "Finding technical terms");
     }, signal);
@@ -128,6 +128,7 @@ export async function runPipeline({ doc, tr, translator, verifier, settings = {}
         if (f.drop === true) { t.dropped = true; t.issue = f.issue || "not a technical term"; continue; }
         if (f.native && f.native !== t.native) { t.prevNative = t.native; t.native = String(f.native); t.fixed = true; }
         if (f.def) t.def = String(f.def);
+        if (f.def_native) t.defNative = String(f.def_native);
         if (f.issue) t.issue = String(f.issue);
       }
       tr.glossaryDropped = terms.filter(t => t.dropped).map(t => ({ en: t.en, issue: t.issue }));

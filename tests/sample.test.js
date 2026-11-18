@@ -28,9 +28,11 @@ for (const lang of SAMPLE.langs) {
     const data = load(lang);
     assert.equal(data.lang, lang);
     assert.deepEqual(Object.keys(defs).filter(k => !data.terms[k]), [], "every term translated");
+    assert.deepEqual(Object.keys(defs).filter(k => !data.defs?.[k]), [], "every term defined in the reader's language");
     assert.deepEqual(doc.sents.map(s => s.id).filter(id => !data.sents[id]), [], "every sentence translated");
     const tr = sampleTranslation(doc, "p", data, defs);
     const idx = buildTermIndex(tr.glossary);
+    assert.ok(tr.glossary.terms.every(t => t.defNative), "definitions in the reader's language reach the glossary");
     for (const s of doc.sents) assert.deepEqual(localCheck(s.en, tr.sents[s.id].tr, idx), [], `${lang} ${s.id}`);
     assert.equal(tr.report.ok, doc.sents.length);
     for (const lv of LEVELS) {
