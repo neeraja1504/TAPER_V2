@@ -9,7 +9,7 @@ TAPER translates an English research paper, written in LaTeX, into a researcher'
 - **Reader:** the compiled translated PDF large, the English original beside it, minimise and maximise either one, click a technical term to see both languages.
 - **Library** of past translations: reopen any paper for free, export or import everything.
 - **Help** on every page (**?**), a Help tab, and guides in [docs/](docs/).
-- **Study log** (CSV/JSON) and a feedback Google Form for the course study.
+- **Study log** kept in the background (export as CSV/JSON from Settings → Study data) and a feedback Google Form for the course study.
 
 ## Run it
 

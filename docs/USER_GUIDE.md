@@ -137,7 +137,7 @@ Install a compiler:
 
 ## 8. Study data
 
-The **Study data** tab logs, per reader and week:
+TAPER logs, per reader and week, in the background (there is no tab for it):
 
 - opening papers
 - level and layout changes
@@ -147,7 +147,7 @@ The **Study data** tab logs, per reader and week:
 - plan drafts, edits and acceptances
 - compiles and downloads
 
-Press **Download the log (CSV)** after each session. API keys and paper text are never logged.
+Export it from **Settings → Study data** (**Download the log (CSV)** or **Download the log (JSON)**) after each session; **View the log** shows the rows. API keys and paper text are never logged.
 
 ## 9. Troubleshooting
 

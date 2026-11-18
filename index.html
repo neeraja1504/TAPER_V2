@@ -24,8 +24,7 @@
     <button role="tab" data-tab="plan" aria-selected="false" title="Your language and your week-by-week reading levels">My plan</button>
     <button role="tab" data-tab="new" aria-selected="false" title="Translate a new paper into your plan's language">Translate</button>
     <button role="tab" data-tab="reader" aria-selected="false" title="Read a paper at this week's level">Read</button>
-    <button role="tab" class="util-first" data-tab="settings" aria-selected="false" title="API keys, models and PDF compiling">Settings</button>
-    <button role="tab" data-tab="data" aria-selected="false" title="The study log recorded in this browser">Study data<span class="count" id="logCount">0</span></button>
+    <button role="tab" class="util-first" data-tab="settings" aria-selected="false" title="API keys, models, PDF compiling and the study log">Settings</button>
     <button role="tab" data-tab="help" aria-selected="false">Help</button>
   </nav>
   <div class="who">
@@ -307,23 +306,28 @@
       <label class="check"><input type="checkbox" id="setColor" checked> Colour technical terms in the PDF</label>
       <label class="check"><input type="checkbox" id="setKeepFont" checked> Keep the paper's Times / Palatino font when possible</label>
     </div>
+    <div class="card">
+      <div class="row spread"><h3>Study data</h3><button class="help-btn" data-help="data" aria-label="Help: study data">?</button></div>
+      <p class="hint">For the research team. TAPER logs reading time, level changes, term lookups, optional check-ins and plan changes in this browser (<span id="logCount">0</span> events so far). Export after every session.</p>
+      <div class="row">
+        <button class="btn primary" id="exportCsv">Download the log (CSV)</button>
+        <button class="btn" id="exportJson">Download the log (JSON)</button>
+        <button class="btn" data-goto="data">View the log</button>
+        <button class="btn danger" id="clearLog">Delete all log entries…</button>
+        <span class="status" id="clearConfirm" hidden>Delete every row of the log? This cannot be undone. <button class="btn danger" id="clearYes">Yes, delete the log</button> <button class="btn" id="clearNo">No, keep it</button></span>
+      </div>
+    </div>
     <p class="status" id="setStatus" role="status"></p>
   </section>
 
   <!-- DATA -->
   <section id="view-data" class="view wrap" hidden>
     <div class="view-head">
-      <div><h2>Study data</h2><p class="hint">Reading time, level changes, term lookups, optional check-ins and plan changes, logged in this browser. Export after every session.</p></div>
+      <div><h2>Study data log</h2><p class="hint">Reading time, level changes, term lookups, optional check-ins and plan changes, logged in this browser. Export it from <button class="link" data-goto="settings">Settings → Study data</button>.</p></div>
       <button class="help-btn" data-help="data" aria-label="Help: study data">?</button>
     </div>
     <div class="card">
       <div class="stats" id="stats"></div>
-      <div class="row">
-        <button class="btn primary" id="exportCsv">Download the log (CSV)</button>
-        <button class="btn" id="exportJson">Download the log (JSON)</button>
-        <button class="btn danger" id="clearLog">Delete all log entries…</button>
-        <span class="status" id="clearConfirm" hidden>Delete every row of the log? This cannot be undone. <button class="btn danger" id="clearYes">Yes, delete the log</button> <button class="btn" id="clearNo">No, keep it</button></span>
-      </div>
       <div class="tablewrap"><table><thead><tr><th>Time</th><th>Reader</th><th>Week</th><th>Event</th><th>Paper</th><th>Lang</th><th>Level</th><th>Native %</th><th>Detail</th></tr></thead><tbody id="logBody"></tbody></table></div>
     </div>
   </section>
