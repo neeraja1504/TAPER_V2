@@ -11,6 +11,8 @@ import { LANGS } from "./langs.js";
 import { englishSet } from "./levels.js";
 
 export const TERM_URL = "https://taper.term/";
+/* [[English key]] or [[English key|inflected native form]] */
+export const TERM_MARK_RE = /\[\[([^\]|]+)(?:\|([^\]]*))?\]\]/g;
 export const FONT_DIR = "taper-fonts/";
 
 /* ---------- glossary index ---------- */
@@ -77,7 +79,7 @@ export function localCheck(en, tr, idx) {
   if (bad.length) problems.push(`new LaTeX commands not in the original: ${[...new Set(bad)].map(c => "\\" + c).join(", ")}`);
   if (/[⟦⟧]/.test(tr.replace(PH_RE, ""))) problems.push("broken placeholder brackets");
   if (idx) {
-    const unknown = [...tr.matchAll(/\[\[([^\]]+)\]\]/g)].map(m => m[1]).filter(k => !idx.lookup(k));
+    const unknown = [...tr.matchAll(TERM_MARK_RE)].map(m => m[1]).filter(k => !idx.lookup(k));
     if (unknown.length) problems.push(`[[...]] used for words that are not glossary terms: ${unknown.join(", ")}`);
   }
   return problems;
@@ -95,13 +97,34 @@ export function renderEnglish(en, idx, linked) {
     return t ? (linked ? `\\taperterm{${t.id}}{en}{${m}}` : `\\texorpdfstring{\\tapertermplain{en}{${m}}}{${m}}`) : m;
   });
 }
-export function renderNative(tr, idx, termMode, linked) {
-  return sanitizeTr(tr).replace(/\[\[([^\]]+)\]\]/g, (m, key) => {
+/* English form of each term as written in the source sentence ("language models"), so English
+   terms inside a translated sentence keep the original's number. */
+function englishSurfaces(en, idx) {
+  const out = new Map();
+  if (!en || !idx.re) return out;
+  for (const m of en.matchAll(idx.re)) {
+    const t = idx.lookup(m[1]);
+    if (!t || out.has(t.id)) continue;
+    let s = m[0].replace(/\s+/g, " ");
+    if (t.en === t.en.toLowerCase()) s = s.toLowerCase(); // "Retrieval-Augmented Generation" in a title -> glossary casing
+    out.set(t.id, s);
+  }
+  return out;
+}
+export function renderNative(tr, idx, termMode, linked, en) {
+  const surf = englishSurfaces(en, idx);
+  let text = sanitizeTr(tr);
+  // Two terms written back to back (common in Chinese/Japanese) need a space once either is in English.
+  if (termMode !== "native") text = text.replace(/\]\]\[\[/g, "]] [[");
+  const cap = (s, off) => off === 0 ? s.charAt(0).toLocaleUpperCase() + s.slice(1) : s; // a term that starts the sentence
+  return text.replace(TERM_MARK_RE, (m, key, form, off) => {
     const t = idx.lookup(key);
-    if (!t) return escapeText(key);
-    if (termMode === "native") return termTex(t, "n", t.native || t.en, linked);
-    if (termMode === "gloss") return termTex(t, "n", `${t.native || t.en} (${t.en})`, linked);
-    return termTex(t, "en", t.en, linked);
+    if (!t) return escapeText(form || key);
+    const native = cap((form && form.trim()) || t.native || t.en, off);
+    const english = cap(surf.get(t.id) || t.en, off);
+    if (termMode === "native") return termTex(t, "n", native, linked);
+    if (termMode === "gloss") return termTex(t, "n", `${native} (${english})`, linked);
+    return termTex(t, "en", english, linked);
   });
 }
 /* Wraps runs of Devanagari in the Devanagari font switch. */
@@ -171,7 +194,7 @@ export function assembleTex(doc, tr, level, opts = {}) {
       let text;
       if (useEn) text = renderEnglish(s.en, idx, linked);
       else {
-        text = renderNative(t.tr, idx, level.termMode, linked);
+        text = renderNative(t.tr, idx, level.termMode, linked, s.en);
         if (deva) text = wrapDevanagari(text);
         nativeChars += s.en.length;
       }

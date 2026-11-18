@@ -28,7 +28,7 @@ If MacTeX/TeX Live (latexmk + XeLaTeX) or [Tectonic](https://tectonic-typesettin
 | `--cors` | Let the GitHub Pages site use this computer's LaTeX (then set Settings → Local helper address to `http://localhost:8000`) |
 | `--tex-path DIR` | Extra folder to look for latexmk / xelatex / tectonic |
 
-Then:
+The app opens with a **sample paper that is already translated** into all nine languages, with ready-made PDFs, so you can try the reader with no API key. To translate your own papers:
 
 1. **Settings:** paste an API key and choose a translator and a verifier model.
 2. **My plan:** set your language, start date and weeks, then draft a plan.
@@ -49,7 +49,7 @@ Private repositories need a paid GitHub plan for Pages. Otherwise run it locally
 |---|---|
 | `index.html`, `css/`, `src/` | The app (ES modules, no build step) |
 | `run.py` | Local server and LaTeX compile helper |
-| `sample/` | Sample paper (source and .zip); rebuild the .zip with `python tools/make_sample.py` |
+| `sample/` | Sample paper: source and .zip, translations in every language (`sample/translations/`), pre-built PDFs (`sample/pdfs/`, rebuilt with `node tools/build_sample_pdfs.mjs`) |
 | `tex/` | LaTeX packages missing from the browser TeX bundles (xeCJK, algorithms), copied unmodified from TeX Live |
 | `docs/USER_GUIDE.md` | How to use TAPER |
 | `docs/DEVELOPER.md` | Architecture, data model, pipeline, deployment, adding languages/providers |

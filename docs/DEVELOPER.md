@@ -22,7 +22,7 @@ level (termMode, share) ──► assemble.js: rebuild LaTeX for that level, add
                          compile.js: local helper or BusyTeX ──► PDF ──► viewer.js (PDF.js + term hotspots)
 ```
 
-The key design choice: **one translation per paper and language; every level is assembled locally.** The translator marks technical terms as `[[English key]]` in each translated sentence. A level only decides:
+The key design choice: **one translation per paper and language; every level is assembled locally.** Terms are marked `[[English key]]`, or `[[English key|inflected native form]]` when the language needs a plural or case form. In English mode the term is shown as the original sentence wrote it ("language models"). The translator marks technical terms as `[[English key]]` in each translated sentence. A level only decides:
 
 1. how each `[[key]]` is shown: native term, "native (English)", or English
 2. which sentences are replaced by the original English
@@ -50,6 +50,10 @@ So moving up a week, or reopening a paper, costs no LLM calls. Levels are also c
 | `run.py` | Static server + `/api/health` + `/api/compile` |
 | `tex/` | xeCJK (LPPL) and algorithms/algorithmicx (LGPL/LPPL), unmodified from TeX Live: added to browser compiles only when a paper loads them, because no BusyTeX bundle contains them |
 | `tools/make_sample.py` | Builds `sample/sample-paper.zip` |
+| `src/sample.js` | The bundled sample: turns `sample/translations/*.json` into translation records; which levels have pre-built PDFs |
+| `sample/translations/` | Sample translations, one editable JSON per language (`terms` + `sents` by sentence id), and `terms.json` with the English definitions |
+| `sample/pdfs/` | Pre-compiled sample PDFs (`original.pdf`, `<lang>/<termMode>-<share>.pdf`) |
+| `tools/build_sample_pdfs.mjs` | Rebuilds `sample/pdfs/` with Tectonic or latexmk. Run it after editing a sample translation |
 | `.github/workflows/pages.yml` | Tests, then deploys the site + BusyTeX to GitHub Pages |
 | `google-form/create_form_latex.gs` | Feedback form for TAPER 2 (the original `create_form.gs` is unchanged) |
 | `legacy/` | The original passage-based TAPER reader and its tests |
@@ -137,6 +141,26 @@ To add a provider, add an entry to `PROVIDERS` and a branch in `callOnce` and `l
 ### Original PDF
 
 The original is compiled with the paper's own engine. If that fails, for example when only Tectonic is available for a pdfLaTeX paper, it is compiled again with XeLaTeX after the same compatibility fixes. Users can upload the original PDF instead.
+
+## The bundled sample
+
+On first load, `ensureSample()` in `app.js` adds the sample to the library:
+
+- the zip
+- `original.pdf`
+- one translation record per language, built by `sampleTranslation()` and flagged `bundled`
+
+It runs once per `SAMPLE.version`. Deleting the sample is remembered; the Library offers to add it back.
+
+For a bundled translation, `showTranslated()` first looks for `sample/pdfs/<lang>/<level>.pdf` before compiling. Pre-built PDFs exist for terms-in-English at every 5% share, and for the native and gloss levels at 0%. Other levels, or changed display settings, are compiled as usual.
+
+To edit a sample translation:
+
+1. Change `sample/translations/<lang>.json`.
+2. Run `npm test`. It checks every sentence: placeholders, braces, commands and term keys.
+3. Run `node tools/build_sample_pdfs.mjs --lang <lang>`.
+
+If the sample source changes, bump `SAMPLE.version` and rebuild everything.
 
 ## Storage
 

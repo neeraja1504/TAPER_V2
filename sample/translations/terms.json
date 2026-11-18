@@ -1,0 +1,27 @@
+{
+  "_about": "English definitions for the sample paper's glossary. Each language file gives the translations. Order here is the order of the glossary.",
+  "terms": {
+    "language model": "A model trained to predict text; the basis of chat assistants.",
+    "next-token prediction": "Training a model to guess the next word piece from the ones before it.",
+    "hallucination": "A fluent but false or unsupported statement produced by a model.",
+    "retrieval-augmented generation": "Generating an answer while conditioning on passages fetched from a document collection.",
+    "retriever": "The component that searches a collection for relevant passages.",
+    "dense retriever": "A retriever that compares questions and passages as vectors.",
+    "cross-encoder": "A model that reads a question and a passage together to score how well they match.",
+    "passage": "A short chunk of text from a document.",
+    "inner product": "The sum of element-wise products of two vectors, used as a similarity score.",
+    "question answering": "The task of answering questions written in natural language.",
+    "benchmark": "A standard dataset used to compare methods.",
+    "exact-match accuracy": "The share of answers that are identical to the reference answer.",
+    "re-ranking": "Reordering a list of candidates with a slower but more accurate model.",
+    "corpus": "A large collection of texts.",
+    "generator": "The model that writes the final answer.",
+    "prompt": "The text given to a language model as its input.",
+    "learning rate schedule": "How the size of training steps changes during training.",
+    "cosine decay": "Lowering the learning rate along a cosine curve.",
+    "ablation": "An experiment that removes one part of a system to measure its effect.",
+    "parameter": "A number inside a model that is learned during training.",
+    "baseline": "The reference method that a new method is compared with.",
+    "inference": "Using a trained model to produce outputs."
+  }
+}

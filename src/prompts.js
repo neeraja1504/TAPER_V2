@@ -57,7 +57,7 @@ Rules:
 1. Translate the meaning faithfully. Do not add, drop or summarise content. Sentences in the same paragraph are given in order; use them as context.
 2. Placeholders like ⟦12⟧ stand for math, citations, references or other LaTeX. Copy every placeholder exactly once and unchanged, in the grammatically right position.
 3. Keep the LaTeX formatting commands that appear in the sentence (\\emph{...}, \\textbf{...}, \\footnote{...}, ~, \\%, \\&) and translate only the human text inside them. Keep curly braces balanced exactly as in the original. Do not add any other LaTeX commands. Write % & # _ $ as \\% \\& \\# \\_ \\$.
-4. Technical terms: wherever a concept from the glossary appears, write it as [[English key]] using the exact English key from the glossary, not the ${lang} word. Everything around it (particles, case endings, articles) stays in ${lang} and must read naturally when the marker is later replaced by either the ${lang} term or the English term. Only glossary keys may appear inside [[ ]].
+4. Technical terms: wherever a concept from the glossary appears, write it as [[English key]] using the exact English key from the glossary, not the ${lang} word. If ${lang} grammar needs a different form of the term in this sentence (plural, case, gender), write [[English key|inflected ${lang} form]], e.g. [[language model|<plural ${lang} form>]]. Everything around it (particles, case endings, articles) stays in ${lang} and must read naturally when the marker is later replaced by either the ${lang} term or the English term. Only glossary keys may appear before the "|" inside [[ ]].
 5. Keep numbers, symbols, URLs and code unchanged.
 ${hasNotes ? "6. Some sentences were translated before and failed review. Fix the problems listed in \"review_notes\".\n" : ""}
 Return only JSON with one entry per input id: {"t":[{"id":"s1","tr":"..."}]}
@@ -73,7 +73,7 @@ export function verifyPrompt(pairs, lang, title, glossary) {
     system: `You are a strict reviewer of English → ${lang} scientific translations.`,
     prompt: `Paper: "${title}"
 
-Each pair has the English source ("en") and a ${lang} translation ("tr"). In "tr", [[key]] marks a technical term from the glossary; it will be shown either in ${lang} or in English depending on the reader's level.
+Each pair has the English source ("en") and a ${lang} translation ("tr"). In "tr", [[key]] or [[key|inflected ${lang} form]] marks a technical term from the glossary; it will be shown either in ${lang} or in English depending on the reader's level.
 
 Check every pair:
 1. Meaning is preserved: no omissions, additions or mistranslations.

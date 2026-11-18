@@ -10,6 +10,7 @@ import { compileProject, fetchFonts, detectLocal, summarizeLog, COMPILE_DEFAULTS
 import { db, local, sha256, deletePaper, deleteTranslation, storageEstimate } from "./store.js";
 import { PdfView } from "./viewer.js";
 import { TOPICS, TAB_TOPIC } from "./help.js";
+import { SAMPLE, sampleTranslation, samplePdfUrl } from "./sample.js";
 
 const $ = id => document.getElementById(id);
 function h(tag, attrs = {}, ...kids) {
@@ -107,8 +108,9 @@ function showTab(tab, { push = true } = {}) {
   if (tab === "data") renderData();
   if (tab === "plan") renderPlanTab();
   if (tab === "settings") renderSettings();
-  if (tab === "new") updateNew();
+  if (tab === "new") { if (!pend.doc && !pend.loading) loadDefaultSample(); else updateNew(); }
   if (tab === "reader" && rd.paperId) startReading();
+  if (tab === "reader" && !rd.paperId && !state.openingSample) { state.openingSample = true; openSample().finally(() => { state.openingSample = false; }); }
 }
 document.querySelectorAll("nav.tabs button").forEach(b => b.onclick = () => showTab(b.dataset.tab));
 document.addEventListener("click", e => {
@@ -180,6 +182,42 @@ async function zipFiles(files) {
   return z.generateAsync({ type: "blob", compression: "DEFLATE" });
 }
 
+/* ======================= the bundled sample paper ======================= */
+/* Adds the pre-translated sample paper to the library (once per sample version). */
+async function ensureSample(force = false) {
+  if (!force && local.get("sampleSeeded", null) === SAMPLE.version) return local.get("samplePaperId", null);
+  try {
+    const r = await fetch(SAMPLE.zip);
+    if (!r.ok) return null;
+    const bytes = new Uint8Array(await r.arrayBuffer());
+    const id = (await sha256(bytes)).slice(0, 16);
+    const doc = parseProject(await readZip(bytes));
+    const paper = (await db.get("papers", id)) || { id, title: doc.title, main: doc.main, doc, zip: new Blob([bytes], { type: "application/zip" }), originalPdf: null, createdAt: new Date().toISOString() };
+    paper.sample = true;
+    if (!paper.originalPdf) {
+      const o = await fetch(SAMPLE.pdfs + "original.pdf");
+      if (o.ok) paper.originalPdf = new Blob([await o.arrayBuffer()], { type: "application/pdf" });
+    }
+    await db.put("papers", paper);
+    const defs = (await (await fetch(SAMPLE.translations + "terms.json")).json()).terms;
+    for (const lang of SAMPLE.langs) {
+      if (await db.get("translations", `${id}|${lang}`)) continue;
+      const t = await fetch(`${SAMPLE.translations}${lang}.json`);
+      if (t.ok) await db.put("translations", sampleTranslation(doc, id, await t.json(), defs));
+    }
+    local.set("sampleSeeded", SAMPLE.version); local.set("samplePaperId", id);
+    return id;
+  } catch (e) { console.warn("[TAPER] could not add the sample paper:", e); return null; }
+}
+async function openSample(lang) {
+  const id = await ensureSample();
+  if (!id) { toast("The sample paper is not available here."); return; }
+  const want = lang || profile().lang;
+  openReader(id, (await db.get("translations", `${id}|${want}`)) ? want : SAMPLE.langs[0]);
+}
+$("openSample").onclick = () => openSample();
+$("restoreSample").onclick = async () => { await ensureSample(true); renderLibrary(); toast("The sample paper is back in your library."); };
+
 /* ======================= library ======================= */
 async function renderLibrary() {
   const [papers, trs, renderKeys] = await Promise.all([db.all("papers"), db.all("translations"), db.keys("renders")]);
@@ -190,7 +228,8 @@ async function renderLibrary() {
   const rows = [...byPaper.values()].filter(r => !q || r.paper.title.toLowerCase().includes(q))
     .sort((a, b) => (Math.max(...b.trs.map(t => Date.parse(t.updatedAt || t.createdAt) || 0), Date.parse(b.paper.createdAt))) - (Math.max(...a.trs.map(t => Date.parse(t.updatedAt || t.createdAt) || 0), Date.parse(a.paper.createdAt))));
   $("libEmpty").hidden = rows.length > 0 || !!q;
-  $("welcome").hidden = papers.length > 0;
+  $("welcome").hidden = papers.some(p => !p.sample);
+  $("sampleRestore").hidden = papers.some(p => p.sample);
   for (const { paper, trs: ts } of rows) {
     const langs = h("div", { class: "langs" });
     for (const t of ts.sort((a, b) => a.lang.localeCompare(b.lang))) {
@@ -200,14 +239,15 @@ async function renderLibrary() {
         : h("span", { class: "pill warn" }, t.status === "running" ? "incomplete" : t.status);
       langs.append(h("div", { class: "lib-lang" },
         h("div", { class: "top" }, h("strong", {}, langLabel(t.lang)), pill),
-        h("span", { class: "meta" }, `${t.translator.model} → checked by ${t.verifier.model}`),
-        h("span", { class: "meta" }, `${fmtN(t.usage.input)} in / ${fmtN(t.usage.output)} out tokens · ${t.usage.calls} calls · ${nRenders} level${nRenders === 1 ? "" : "s"} compiled`),
+        t.bundled ? h("span", { class: "meta" }, `Included with TAPER: pre-translated, no credits · ${nRenders} level${nRenders === 1 ? "" : "s"} opened`)
+          : [h("span", { class: "meta" }, `${t.translator.model} → checked by ${t.verifier.model}`),
+             h("span", { class: "meta" }, `${fmtN(t.usage.input)} in / ${fmtN(t.usage.output)} out tokens · ${t.usage.calls} calls · ${nRenders} level${nRenders === 1 ? "" : "s"} compiled`)],
         h("div", { class: "row" },
           t.status === "complete" ? h("button", { class: "btn small primary", onclick: () => openReader(paper.id, t.lang) }, "Open") : h("button", { class: "btn small primary", onclick: () => loadPaperIntoNew(paper, t.lang) }, "Resume"),
           h("button", { class: "btn small danger", onclick: async () => { if (confirm(`Delete the ${LANGS[t.lang]?.name || t.lang} translation of "${paper.title}"? This cannot be undone.`)) { await deleteTranslation(t.id); if (rd.paperId === paper.id && rd.lang === t.lang) clearReader(); renderLibrary(); } } }, "Delete"))));
     }
     list.append(h("article", { class: "lib-card" },
-      h("h3", {}, paper.title),
+      h("h3", {}, paper.title, paper.sample ? h("span", { class: "pill ok", style: "margin-left:8px;vertical-align:2px" }, "sample") : null),
       h("span", { class: "meta" }, `${paper.doc.stats.sentences} sentences · ${paper.doc.stats.words} words · added ${new Date(paper.createdAt).toLocaleDateString()}`),
       langs,
       h("div", { class: "row" },
@@ -312,6 +352,14 @@ const drop = $("drop");
 drop.addEventListener("dragover", e => { e.preventDefault(); drop.classList.add("over"); });
 drop.addEventListener("dragleave", () => drop.classList.remove("over"));
 drop.addEventListener("drop", e => { e.preventDefault(); drop.classList.remove("over"); const f = e.dataTransfer.files[0]; if (f) handleZip(f); });
+async function loadDefaultSample() {
+  pend.loading = true;
+  try {
+    const r = await fetch(SAMPLE.zip);
+    if (r.ok) { await handleZip(new File([await r.blob()], "sample-paper.zip")); $("zipStatus").textContent = "The sample paper is selected (already translated: open it for free). Upload your own .zip to translate a different paper."; }
+  } catch { /* offline or file:// */ }
+  pend.loading = false; updateNew();
+}
 $("useSample").onclick = async () => {
   try {
     const r = await fetch("sample/sample-paper.zip");
@@ -435,7 +483,10 @@ async function openReader(paperId, lang) {
   local.set("lastOpen", { paperId, lang });
   $("rdEmpty").hidden = true; $("rdShell").hidden = false;
   $("rdTitle").textContent = paper.title;
-  $("rdLang").textContent = `English → ${langLabel(lang)} · translated by ${tr.translator.model}${tr.verifier.model !== "none" ? `, checked by ${tr.verifier.model}` : ""}`;
+  $("rdLang").textContent = tr.bundled ? "Sample paper · pre-translated, included with TAPER" : `English → ${langLabel(lang)} · translated by ${tr.translator.model}${tr.verifier.model !== "none" ? `, checked by ${tr.verifier.model}` : ""}`;
+  const langs = (await db.all("translations")).filter(t => t.paperId === paperId && t.status === "complete").map(t => t.lang);
+  $("rdLangSel").replaceChildren(...langs.map(l => new Option(langLabel(l), l)));
+  $("rdLangSel").value = lang;
   closeSide();
   setView(local.get("view", "split"), false);
   logEvent("open", { title: paper.title });
@@ -485,6 +536,7 @@ $("rdLevel").onchange = e => {
   else if (v.startsWith("p")) setLevel(LEVELS[+v.slice(1)], "preset");
 };
 $("rdUsePlan").onclick = () => setLevel(planLevel(profile()), "my week");
+$("rdLangSel").onchange = e => { logEvent("language", { to: e.target.value }); openReader(rd.paperId, e.target.value); };
 $("rdShare").oninput = e => { $("rdShareVal").textContent = e.target.value + "%"; };
 $("rdApply").onclick = () => { $("rdCustom").open = false; setLevel({ termMode: $("rdTermMode").value, share: +$("rdShare").value }, "fine-tune"); };
 
@@ -507,6 +559,21 @@ async function showTranslated() {
     return;
   }
   viewTr.clear(); paneMessage($("pdfTr"), "Building this level…", true);
+  if (rd.tr.bundled && SAMPLE.hasPdf(rd.level) && settings.colorTerms !== false && settings.keepPaperFont !== false) {
+    try {
+      const r = await fetch(samplePdfUrl(rd.lang, levelKey(rd.level)));
+      if (r.ok) {
+        const pdf = new Uint8Array(await r.arrayBuffer());
+        const { nativePct } = assembleTex(rd.doc, rd.tr, rd.level);
+        await db.put("renders", { id, paperId: rd.paperId, lang: rd.lang, levelKey: levelKey(rd.level), pdf: new Blob([pdf], { type: "application/pdf" }), nativePct, via: "included", createdAt: new Date().toISOString() });
+        if (seq !== rd.seq) return;
+        rd.nativePct = nativePct; rd.pdf = pdf;
+        await viewTr.load(pdf);
+        afterRender(`${levelName(rd.level)} · ${nativePct}% in ${LANGS[rd.lang].name} · included with TAPER (no credits)`);
+        return;
+      }
+    } catch { /* fall through to compiling */ }
+  }
   try {
     const files = await getFiles();
     const { tex, nativePct } = assembleTex(rd.doc, rd.tr, rd.level, { colorTerms: settings.colorTerms, keepPaperFont: settings.keepPaperFont });
@@ -965,9 +1032,15 @@ fillLangSelect($("newLang"), profile().lang);
 renderHeader();
 renderHelpPage();
 const startTab = location.hash.slice(1);
-showTab(TABS.includes(startTab) && startTab !== "reader" ? startTab : "library");
-if (startTab === "reader") {
+const firstVisit = !local.get("visited", false);
+local.set("visited", true);
+ensureSample().then(id => {
   const last = local.get("lastOpen", null);
-  if (last) openReader(last.paperId, last.lang); else showTab("reader");
-}
+  if (firstVisit && !startTab && id) {
+    openSample().then(() => toast("This is the sample paper, already translated for you. Change the level or language at the top; set up your own plan in My plan.", 7000));
+  } else if (startTab === "reader") {
+    if (last) openReader(last.paperId, last.lang); else if (id) openSample(); else showTab("reader");
+  } else if (state.tab === "library") renderLibrary();
+});
+showTab(TABS.includes(startTab) && startTab !== "reader" ? startTab : "library");
 if (location.protocol === "file:") toast("Open TAPER through python run.py or the GitHub Pages address: browsers block parts of it on file:// pages.", 8000);

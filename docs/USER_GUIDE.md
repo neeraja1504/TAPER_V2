@@ -19,7 +19,17 @@ The same help is built into the app: every page has a **?** button, and there is
 
 Do not open `index.html` by double-clicking it. Browsers block parts of the app on `file://` pages.
 
-## 2. First-time setup
+## 2. The sample paper
+
+TAPER comes with a short sample paper (*Grounding Answers in Retrieved Evidence*), already translated into all nine languages, with PDFs ready for every common level. On your first visit it opens in the Reader. It is also in the Library and is pre-selected on the Translate page.
+
+- Use it to try levels, the term popups, the glossary and the layout, with no API key and no credits.
+- Switch language with the **Language** menu at the top of the Reader.
+- If you delete it, the Library offers **Add it back**.
+
+The sample translations were written for this demo and have not been reviewed by native speakers.
+
+## 3. First-time setup
 
 ### Add a model (Settings)
 
@@ -51,7 +61,7 @@ Later, open **Adjust with AI…**, say how it is going ("week 3 was too fast"), 
 
 Several people can share one computer. Use the **Reader** menu in the header to switch or add readers. Each reader has their own plan; the library is shared, so nobody pays twice for the same paper.
 
-## 3. Translating a paper (Translate)
+## 4. Translating a paper (Translate)
 
 1. **Get the LaTeX source.** On arXiv, open the paper, choose *Other formats* (or *TeX Source*), and download the source. If it arrives as `.tar.gz`, unpack it and zip the folder.
 2. Drop the `.zip` on the page, or press **Use the sample paper**.
@@ -73,7 +83,7 @@ You will see the steps:
 
 If you upload a paper that is already in your library, TAPER says so and opens it without new calls.
 
-## 4. Reading (Reader)
+## 5. Reading (Reader)
 
 - The **translated PDF** fills most of the window; the **English original** is beside it.
   - **Side by side / Translated / Original** switch the layout.
@@ -91,7 +101,7 @@ If you upload a paper that is already in your library, TAPER says so and opens i
 - **Report**: what the verifier corrected, any sentences it flagged, any sentences left in English because they failed the checks, and the tokens used. **Translate … again** retries just those sentences.
 - **Check my understanding** (optional): rate how the level felt, or make a short quiz (questions in English with your language underneath). Nothing pops up on its own and nothing is required.
 
-## 5. Library
+## 6. Library
 
 Every paper and language you have translated, with its status, models, tokens used and compiled levels.
 
@@ -101,7 +111,7 @@ Every paper and language you have translated, with its status, models, tokens us
 
 The library lives in your browser. Clearing site data deletes it, so export now and then.
 
-## 6. Compiling: what you need
+## 7. Compiling: what you need
 
 The translated paper is compiled with XeLaTeX. There are two ways:
 
@@ -121,7 +131,7 @@ Install a compiler:
 - Windows: MiKTeX or TeX Live, or Tectonic
 - Linux: `sudo apt install latexmk texlive-xetex texlive-latex-extra`, or Tectonic
 
-## 7. Study data
+## 8. Study data
 
 The **Study data** tab logs, per reader and week:
 
@@ -135,7 +145,7 @@ The **Study data** tab logs, per reader and week:
 
 **Export CSV** after each session. API keys and paper text are never logged.
 
-## 8. Troubleshooting
+## 9. Troubleshooting
 
 | Problem | What to do |
 |---|---|
@@ -149,7 +159,7 @@ The **Study data** tab logs, per reader and week:
 | Blank page | Use `python run.py` or the web address, not a `file://` page |
 | Library is empty | Browser storage was cleared, or you are on a different port or address. Import your last export |
 
-## 9. Good to know
+## 10. Good to know
 
 - Machine translation is a starting point. Use the report, and have a native speaker check papers used in a study.
 - Paper text goes only to the model provider you chose. Fonts and TeX files come from public CDNs.

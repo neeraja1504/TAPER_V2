@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { parseProject } from "../src/latex.js";
-import { assembleTex, sanitizeTr, localCheck, buildTermIndex, renderEnglish, wrapDevanagari, xetexCompat, buildProjectFiles } from "../src/assemble.js";
+import { assembleTex, sanitizeTr, localCheck, buildTermIndex, renderEnglish, renderNative, wrapDevanagari, xetexCompat, buildProjectFiles } from "../src/assemble.js";
 import { englishSet, LEVELS } from "../src/levels.js";
 import { readSample, fakeTranslation } from "./helpers.js";
 
@@ -107,4 +107,30 @@ test("language-specific font setup", () => {
   const files = buildProjectFiles(doc, { "main.tex": "x" }, vi, "vi", { "NotoSerif-Regular.ttf": new Uint8Array(1) });
   assert.ok(files["taper-fonts/NotoSerif-Regular.ttf"]);
   assert.ok(files["TAPER-README.txt"]);
+});
+
+test("inflected native forms and the original's English number", () => {
+  const idx = buildTermIndex({ terms: [{ id: "t1", en: "language model", native: "modelo de lenguaje" }] });
+  const en = "Large language models are fluent.";
+  const tr = "Los grandes [[language model|modelos de lenguaje]] son fluidos.";
+  assert.deepEqual(localCheck(en, tr, idx), []);
+  assert.equal(renderNative(tr, idx, "native", true, en), "Los grandes \\taperterm{t1}{n}{modelos de lenguaje} son fluidos.");
+  assert.equal(renderNative(tr, idx, "english", true, en), "Los grandes \\taperterm{t1}{en}{language models} son fluidos.");
+  assert.equal(renderNative(tr, idx, "gloss", true, en), "Los grandes \\taperterm{t1}{n}{modelos de lenguaje (language models)} son fluidos.");
+  assert.equal(renderNative("Un [[language model]].", idx, "english", true, "Language models work."), "Un \\taperterm{t1}{en}{language models}.");
+});
+
+test("title-case terms use glossary casing; adjacent English terms get a space", () => {
+  const idx = buildTermIndex({ terms: [{ id: "t1", en: "question answering", native: "问答" }, { id: "t2", en: "benchmark", native: "基准" }, { id: "t3", en: "retrieval-augmented generation", native: "检索增强生成" }] });
+  assert.equal(renderNative("关于[[retrieval-augmented generation]]的研究", idx, "english", false, "A Study of Retrieval-Augmented Generation"),
+    "关于\\texorpdfstring{\\tapertermplain{en}{retrieval-augmented generation}}{retrieval-augmented generation}的研究");
+  assert.equal(renderNative("三个[[question answering]][[benchmark]]上", idx, "english", true, "On three question answering benchmarks"),
+    "三个\\taperterm{t1}{en}{question answering} \\taperterm{t2}{en}{benchmarks}上");
+  assert.equal(renderNative("三个[[question answering]][[benchmark]]上", idx, "native", true, "x"), "三个\\taperterm{t1}{n}{问答}\\taperterm{t2}{n}{基准}上");
+});
+
+test("a term that starts a sentence is capitalised", () => {
+  const idx = buildTermIndex({ terms: [{ id: "t1", en: "language model", native: "языковая модель" }] });
+  assert.equal(renderNative("[[language model|языковые модели]] учатся.", idx, "english", true, "Language models learn."), "\\taperterm{t1}{en}{Language models} учатся.");
+  assert.equal(renderNative("[[language model]] учится.", idx, "native", true, "x"), "\\taperterm{t1}{n}{Языковая модель} учится.");
 });

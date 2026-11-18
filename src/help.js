@@ -4,6 +4,7 @@
 export const TOPICS = [
   { id: "start", title: "Getting started", html: `
 <p>TAPER translates an English research paper written in LaTeX into your language, then moves you toward reading it in English week by week. Technical terms come first: they stay in English from the start, because most of them only really exist in English.</p>
+<p><b>Try it first with the sample paper.</b> It is already translated into every language and opens instantly, with no API key and no credits. Change the level or the language at the top of the Reader.</p>
 <ol>
 <li><b>Set up a model.</b> In <a href="#settings">Settings</a>, paste an API key (Anthropic, OpenAI, Google Gemini, OpenRouter, or a local model) and pick a <em>translator</em> and a <em>verifier</em> model.</li>
 <li><b>Tell TAPER about you.</b> In <a href="#plan">My plan</a>, choose your language, your start date and how many weeks you want. Ask the AI to draft a plan, then edit it.</li>

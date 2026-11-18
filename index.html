@@ -44,6 +44,7 @@
     </div>
     <div class="card welcome" id="welcome" hidden>
       <h3>Welcome to TAPER</h3>
+      <p class="hint">The sample paper below is already translated into every language, so you can try the reader right now, with no API key and no credits. <button class="link" id="openSample">Open the sample paper</button></p>
       <ol class="steps">
         <li><b>Add a model.</b> Paste an API key and choose a translator and verifier. <button class="link" data-goto="settings">Open Settings</button></li>
         <li><b>Make your plan.</b> Your language, start date and how many weeks. <button class="link" data-goto="plan">Open My plan</button></li>
@@ -58,6 +59,7 @@
     </div>
     <div id="libList" class="lib-grid"></div>
     <p class="empty" id="libEmpty" hidden>No translations yet. <button class="link" data-goto="new">Translate your first paper</button>.</p>
+    <p class="hint" id="sampleRestore" hidden>The sample paper was removed. <button class="link" id="restoreSample">Add it back</button> (pre-translated, no credits).</p>
   </section>
 
   <!-- TRANSLATE -->
@@ -119,6 +121,7 @@
     <div class="reader-shell" id="rdShell" hidden>
       <div class="toolbar">
         <div class="tb-title"><h2 id="rdTitle"></h2><span class="sub" id="rdLang"></span></div>
+        <label class="field inline"><span class="label">Language</span><select id="rdLangSel" aria-label="Translation language"></select></label>
         <div class="tb-level">
           <label class="field inline"><span class="label">Level</span><select id="rdLevel" aria-label="Translation level"></select></label>
           <button class="btn small" id="rdUsePlan"></button>

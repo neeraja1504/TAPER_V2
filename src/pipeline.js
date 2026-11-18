@@ -249,6 +249,6 @@ export function makeReport(doc, tr) {
     sentences: doc.sents.length, ok: count("ok"), fixed: count("fixed"), flagged: count("flagged"), fallback: count("fallback"),
     terms: terms.length, termsCorrected: terms.filter(t => t.fixed).length, termsDropped: (tr.glossaryDropped || []).length,
     items: doc.sents.filter(s => ["flagged", "fallback", "fixed"].includes(tr.sents[s.id]?.status))
-      .map(s => ({ id: s.id, status: tr.sents[s.id].status, en: plainText(s.en, doc.ph), tr: tr.sents[s.id].tr ? plainText(tr.sents[s.id].tr.replace(/\[\[([^\]]+)\]\]/g, "$1"), doc.ph) : "", issues: tr.sents[s.id].issues || [] }))
+      .map(s => ({ id: s.id, status: tr.sents[s.id].status, en: plainText(s.en, doc.ph), tr: tr.sents[s.id].tr ? plainText(tr.sents[s.id].tr.replace(/\[\[([^\]|]+)(?:\|([^\]]*))?\]\]/g, (m, k, f) => f || k), doc.ph) : "", issues: tr.sents[s.id].issues || [] }))
   };
 }
